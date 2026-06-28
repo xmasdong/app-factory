@@ -5,6 +5,8 @@ description: "Discover product viability autonomously — extract keywords, run 
 
 # /discover — Phase A 探索 (Autonomous, 不问用户)
 
+> 🔗 **App Factory 集成 — 技术栈初选**:Step 2 的 `TECH_STACK` 字段不要只写一行。用 `app/templates/sections/tech-stack-decision.md` 出**初选**:从能力需求倒推 + **≥2 候选对比矩阵**(含 **AI-可建性** 维度,本流水线全 AI 驱动)。接近难分的标 `待 spike 定`,留给 lockdown spike 决。mockup 用 `codex-image-bridge`。
+
 **作用:** 用户输入"做 X" → AI 全自动跑 (抽关键词 → 市场调研 → 自决 5 字段 → 出 mockup → 写 summary) → 在 Step 5 hard stop 等用户看 mockup 决定。
 
 **关键约束:**

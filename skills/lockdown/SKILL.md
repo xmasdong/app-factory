@@ -5,6 +5,8 @@ description: "Lock down all external anchors after user approval — technical s
 
 # /lockdown — Phase B 锚定 (2-touch workflow 的 TOUCH 2 之后, AUTONOMOUS)
 
+> 🔗 **App Factory 集成 — 技术栈定稿**:Step 2.1 技术 spike 同时**定稿技术栈决策**。读 discover 的初选;若标了 `待 spike 定` 或两候选接近,**spike 跑关键能力**对比后定;写满 `app/templates/sections/tech-stack-decision.md`(决策 + 反方 + FROZEN)。合规扫描调 `app-store-review-survival`。
+
 **作用:** 用户在 /discover Step 0.8 回 "推进" → hook 写 AUTONOMOUS=true → 本 skill 自动跑 5 子节真验证 → 通过后自动续接 /shape。
 
 **关键约束:** AUTONOMOUS 模式下 AI 自决, 不问用户 (除非熔断 / 真不可知决策 / 合规阻塞)。每个子节必须有**真 evidence**, 拒绝 PROPOSED / 待跑 / TBD 占位。

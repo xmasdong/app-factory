@@ -7,6 +7,8 @@
 
 ## 0. 组成(全内置于本仓 `skills/`)
 
+**入口(路由)**:`app-factory` — 读 `docs/status.md` 当前关,派给对应 skill;不干活只调度,7 关仍各自可单调。新 app / 接手不确定在哪关时从这进。
+
 **脊柱(app 出海生命周期,7 个)**:
 `scaffold → discover → lockdown → shape → build → qa → ship`(带 5 道 A-GATE + 机械验收)
 
@@ -93,6 +95,8 @@
 | **frontend-design 簇** | 完全没接 | shape(设计方向)+ build(UI实现)+ qa(audit) | UI 从"能跑"升到"有设计感",过审+留存都受益 |
 | **ios-ship-cli** | 没接(ship 只备材料) | ship 末尾 | 真把包推上去,闭环最后一步 |
 | **app-store-screenshots** | ship 用泛 fastlane | qa(截图存档)+ ship(商店图) | 程序化出多端上架截图,省手工 |
+| **技术栈决策**(新增) | 原只 AI 自决一行 + spike 验可行 | discover(初选≥2候选矩阵)+ lockdown(spike 定稿) | 能力需求驱动 + AI-可建性权重 + 不确定 spike,选型不拍脑袋(模板 `sections/tech-stack-decision.md`) |
+| **app-factory 路由**(新增) | 无统一入口 | 门面入口 | 读 status 派关,一个命令进,7 关仍可单调 |
 
 ---
 

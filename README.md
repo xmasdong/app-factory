@@ -7,9 +7,11 @@
 
 ## 一句话流程
 
+**入口:`/app-factory`**(读 `docs/status.md` 自动派到当前关;7 关也可各自单调)
+
 ```
-做"X" → discover(选品验证) → 🛑你看mockup → lockdown(真验证锁定)
-      → shape(规格) → build(实现) → qa(验收) → ship(上架材料+真上传)
+/app-factory → scaffold → discover(选品+技术栈初选) → 🛑你看mockup → lockdown(真验证+技术栈定稿)
+            → shape(规格) → build(实现+UI+美术) → qa(验收) → ship(上架材料+真上传)
 ```
 
 全程 AI 自主,**只在看 mockup 时找你一次**(2-touch)。每关有机械验收闸门,过不了不放行。
