@@ -16,6 +16,38 @@
 
 全程 AI 自主,**只在看 mockup 时找你一次**(2-touch)。每关有机械验收闸门,过不了不放行。
 
+## 安装 / 使用
+
+**前置**:[Claude Code](https://claude.com/claude-code)(skill 机制依赖它)。skill 内容中文为主。
+
+```bash
+# 1. clone
+git clone git@github.com:xmasdong/app-factory.git
+
+# 2. 让 Claude Code 发现 skill —— 软链进个人 skill 目录(所有项目可用)
+ln -s "$(pwd)/app-factory/skills/"* ~/.claude/skills/
+#    (或拷贝;或软链到 <某项目>/.claude/skills/ 做项目级)
+
+# 3. 设运行依赖 —— scaffold 从这里拷模板/规则/hooks 到新项目
+echo 'export AI_RULES_ROOT="'$(pwd)'/app-factory"' >> ~/.zshrc && source ~/.zshrc
+```
+
+**用**:
+```
+# 在一个空目录(你要做的新 app)开 Claude Code
+/app-factory          # 一个命令进,读 docs/status.md 自动派到当前关
+# 或从头:/scaffold 描述"做 X" → /discover → 看 mockup 回"推进" → 自动链到上架
+```
+
+**各工具 skill 按需的凭证**:
+- `codex-image-bridge`(出图/图标/素材)→ ChatGPT / Codex 登录
+- `ios-ship-cli`(真上传 TestFlight/App Store)→ fastlane + Apple Developer 账号
+- `app-store-review-survival` / `app-store-screenshots` / `frontend-design` 簇 → 无需额外凭证
+
+> ⚠️ 跨端原生构建(iOS/Android)需各自工具链(Xcode / Android SDK / Flutter 等);本工厂管流程与产物,不替代构建环境。
+
+---
+
 ## 完整流水线(脊柱 + 插入的工具 skill)
 
 | 阶段 | Gate | 脊柱 skill | 插入工具 skill | 产物 |
