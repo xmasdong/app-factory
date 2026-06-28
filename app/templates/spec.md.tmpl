@@ -1,0 +1,171 @@
+# ${PROJECT_NAME} — App 主线 spec
+
+> PROJECT_TYPE: app
+> 本 spec 由 ai-rules/app 主线管控, 5 个 A-GATE 顺序执行
+> 通用思想 (PRD 挑战 / 故障想象力 / 数据契约 / 任务拆分) 沿用 generic spec, 见 `../../CLAUDE.md`
+
+---
+
+## 元信息
+
+- 产品名: <TBD>
+- 一句话定位: <TBD>
+- 当前 GATE: A-GATE 0
+- 启动日期: <YYYY-MM-DD>
+
+---
+
+## A-GATE 0 外部锚定 (5 个子产物, 全部 locked 才能进 A-GATE 1)
+
+### 命名锁定 (NAMING-LOCK)
+
+> 引用模板: `ai-rules/app/templates/sections/naming-lock.md`
+> AI 填实, 每项 evidence 指向 `.claude/state/evidence/<hash>.txt`
+
+<TBD: 6 项查重 + status: locked>
+
+### 单位经济 (ECONOMICS)
+
+> 引用模板: `ai-rules/app/templates/sections/economics.md`
+
+<TBD: 单次成本表 + 价格阶梯单调 + 反薅 ≥5 条>
+
+### 技术 spike (SPIKE)
+
+> 复用 generic `[CRITICAL]` 核心难点章节: `方案选择 + 最小验证 + 失败信号 + 回退方案`
+> 不另立 TECH-SPIKE.md, 嵌入下方"核心难点"章节
+
+<TBD: 关键技术假设逐个跑最小实验 + 结果>
+
+### 后端就绪 (BACKEND-READINESS)
+
+> 引用模板: `ai-rules/app/templates/sections/backend-readiness.md`
+
+<TBD: 云服务 / 支付 / 推送 / 域名 / 演示账号 checkbox>
+
+### 合规扫描 (COMPLIANCE)
+
+> 引用模板: `ai-rules/app/templates/sections/compliance.md`
+> 引用 skill: `app-store-review-survival`
+
+<TBD: 隐私 / 删除账号 / GDPR / ATT / Kids / 网络授权时机 / 权限文案>
+
+---
+
+## A-GATE 1 产品认知 (复用 generic GATE 0 + 多端补丁)
+
+### 全局认知
+
+<TBD: 产品做什么 / 用户是谁 / 商业模式 / 边界 / 不做清单>
+
+### PRD 挑战 (5 视角)
+
+> 复用 generic PRD 挑战格式, 见 `../../.claude/rules/core.md` § PRD 挑战
+
+#### 1. 状态完整性
+<TBD>
+
+#### 2. 边界条件
+<TBD>
+
+#### 3. 多角色一致性
+<TBD>
+
+#### 4. 时序敏感
+<TBD>
+
+#### 5. 数据生命周期
+<TBD>
+
+### 故障想象力 (维度驱动)
+
+> 复用 generic 故障想象力格式
+
+<TBD: 维度枚举 + 主语覆盖 + 防 故障#N 标注>
+
+### 核心难点 (含技术 spike 验证结果)
+
+> [CRITICAL] 模块定义 + 方案选择 + 最小验证 + 失败信号 + 回退方案
+
+<TBD>
+
+### 多端能力矩阵 (PLATFORM-MATRIX) — app 主线必填
+
+> 引用模板: `ai-rules/app/templates/sections/platform-matrix.md`
+
+<TBD: 8+ 能力维度 × iOS/Android/鸿蒙/小程序/Web × fallback>
+
+### 数据契约 (多端)
+
+> 高风险字段必填: 金额单位 / 时间格式 / 状态枚举 / ID 类型
+> "消费方" 列必须含多端 (iOS / Android / Web / 后端)
+
+| 字段 | 类型 | 单位/格式 | 生产者 | 消费方 (多端) |
+|------|------|----------|--------|-------------|
+| <TBD> | <TBD> | <TBD> | <TBD> | <TBD> |
+
+### 覆盖契约 (核心链路)
+
+<TBD: 核心链路清单 + 显式不覆盖>
+
+---
+
+## A-GATE 2 实现任务清单
+
+> 每个 TASK 含 PLATFORM 字段 (iOS / Android / Backend / Web / All)
+
+```
+TASK: <一句话描述>
+ACCEPT: Given... When... Then...
+SOURCE: <数值来源>
+FILES: <路径>
+PLATFORM: <端>          ← app 主线新增
+IMPACT: <消费方>
+SMOKE: <最小可执行验证>
+BOUNDARY: <不改什么>
+COVERAGE: <覆盖说明>
+HUMAN: <人介入项>
+DEP: <依赖任务编号>
+```
+
+<TBD: 任务列表>
+
+---
+
+## A-GATE 3 验收记录
+
+<TBD: 测试输出 + 截图 + 审核员路径>
+
+---
+
+## A-GATE 4 上架材料 (ASO + 商店材料)
+
+### ASO 关键词
+
+- app_name: <TBD>
+- subtitle: <TBD>
+- keywords: <TBD> (5 个)
+- description: <TBD>
+
+### 截图脚本
+
+- 路径: `scripts/screenshots.*` 或 `fastlane/Snapfile`
+- 多语言: <TBD>
+
+### 商店材料
+
+- 隐私问卷 (App Privacy): <TBD>
+- 年龄分级: <TBD>
+- 演示账号 (评测): 见 BACKEND-READINESS
+- EULA URL: <TBD>
+- 隐私政策 URL: <TBD>
+
+### 多语言定稿
+
+<TBD>
+
+---
+
+## 放弃的方案
+
+<TBD: 试了什么 / 为什么放弃 / 换成了什么>

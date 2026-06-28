@@ -1,0 +1,42 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/prompt-tail-marker-remind.sh" },
+          { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-prompt-resume-detect.sh" }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "if": "Bash(git commit *)", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-commit-scope.sh" },
+          { "type": "command", "if": "Bash(git commit *)", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-commit-bundle-coherence.sh" }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-anchor-check.sh" },
+          { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-edit-design-remind.sh" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      { "matcher": "Bash", "hooks": [{ "type": "command", "if": "Bash(git commit *)", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/post-commit-next-task.sh" }] }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-politeness-guard.sh" },
+          { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-app-audit.sh" }
+        ]
+      }
+    ],
+    "PreCompact": [
+      { "hooks": [{ "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-compact-dump.sh" }] }
+    ]
+  }
+}

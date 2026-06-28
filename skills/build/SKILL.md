@@ -1,0 +1,200 @@
+---
+name: build
+description: "Build one task to passing tests with PLATFORM isolation, bundle id coherence enforcement, multi-platform mock routing, and scope discipline. A-GATE 2 implementation entry for app projects."
+---
+
+# /build — A-GATE 2 实现 (app 主线)
+
+> 🔗 **App Factory 集成 — UI 与美术**:
+> - UI 类任务实现后调 UI 簇:`frontend-design`(界面质感)+ `polish`(对齐间距)/`animate`(动效)/`colorize`(配色)/`harden`(错误处理/i18n/文字溢出),把"能跑"升到"有设计感"。
+> - **美术/素材调 `codex-image-bridge`**:app 图标、应用内插画/图标/素材、效果图。⚠️图标约束:App Store 图标**无 alpha 通道**(RGB 不透明);watchOS 图标**不能深色/黑底**(需明亮彩色满底);各平台尺寸齐全。
+
+**作用:** 拿一个任务到测试通过 + commit. 在 generic 实现规则之上, 加 app 主线的 PLATFORM 隔离、bundle id 一致性、多端 mock 路由.
+
+**INPUT_CONTRACT:**
+- A-GATE 0/1 已过: `clearance-anchor.json` + `clearance-shape.json` 存在
+- 当前任务在 `docs/status.md` 任务清单中, 含 `PLATFORM:` 字段
+- `docs/status.md` 顶部含 `PROJECT_TYPE: app` + `CURRENT_GATE: A-GATE 2`
+
+**CONTRACT 不满足时:**
+- A-GATE 0/1 未过 → 拒绝执行, 提示先跑 /anchor 或 /shape
+- TASK 缺 PLATFORM 字段 → 提示回 /shape 补全 TASK-TEMPLATE
+- PROJECT_TYPE 不是 app → 提示走 generic 实现 skill
+
+**OUTPUT → 代码 + 测试 + status.md 更新 + commit hash + skill-signal.json**
+
+参照 `.claude/rules/core.md § GATE 1 理解门禁`、`§ GATE 2 能力门禁`、`§ 决策生命周期`、`§ 禁止模式` (预建抽象 / 幽灵依赖 / 防御性冗余 / 范围蠕变).
+
+---
+
+## 执行计划
+
+```
+- [ ] Step 1: 读 status.md 找当前 TASK, 确认 PLATFORM 字段
+- [ ] Step 2: GATE 1 三问 (一句话做什么 / ACCEPT 可测试 / 改哪些文件)
+- [ ] Step 3: PLATFORM 隔离自检
+- [ ] Step 4: 实现代码 (遵循 Mock/Stub + 禁止模式 + 决策生命周期)
+- [ ] Step 5: 写测试 (单元 + 集成; stabilizing 起含 E2E)
+- [ ] Step 6: bundle id 一致性自检 (改 Info.plist/build.gradle/package.json 时强制)
+- [ ] Step 7: 跑测试, 失败 → 最多 3 轮 fix→retest (熔断器接管)
+- [ ] Step 8: scope check (改动 ⊆ TASK.FILES, 受 PLATFORM 约束)
+- [ ] Step 9: 更新 status.md (任务状态 + optimistic/deferred 清单)
+- [ ] Step 10: commit
+- [ ] Step 11: 写 skill-signal.json
+```
+
+---
+
+## Step 3: PLATFORM 隔离自检
+
+每个 TASK 的 `PLATFORM:` 字段约束允许修改的目录:
+
+| PLATFORM | 允许目录 |
+|----------|---------|
+| iOS | `ios/`, `*.swift`, `*.m`, `*.h`, `Podfile*`, `*.xcconfig` |
+| Android | `android/`, `*.kt`, `*.java`, `build.gradle*`, `AndroidManifest.xml` |
+| Backend | `backend/`, `api/`, `server/`, `*.go`, `*.py`, `*.ts` (服务端) |
+| Web | `web/`, `admin/`, `*.tsx`, `*.vue`, `*.html` |
+| 鸿蒙 | `harmony/`, `*.ets`, `*.har` |
+| 小程序 | `miniapp/`, `wxapp/`, `pages/`, `app.json` |
+| All | 任何目录 (ACCEPT 显式说明跨端理由) |
+
+**违规检测:**
+- TASK.PLATFORM=iOS 但改了 `android/` → 阻塞. 拆任务或改 PLATFORM=All
+- 反之同理
+- **例外:** native bridge / 多端共享 model — 必须 PLATFORM=All 且 IMPACT 显式列双端消费方
+
+由 `pre-commit-scope.sh` + `sg_app_bundle_coherence` 触发校验.
+
+---
+
+## Step 4: 实现规则 (核心)
+
+### Mock/Stub (生产代码路径)
+
+`.claude/rules/core.md § 禁止模式` 和硬规则 11/12 要求:
+
+- 生产代码中的 mock/stub 必须满足至少一项:
+  a) 函数/文件名含 `Mock`/`Stub`/`Placeholder`/`Fake`
+  b) 环境变量门控 (`MOCK_*=1`), 非生产环境输出 WARNING 日志
+  c) `DONE-TEMPLATE.STUB_REMAINING` 显式声明
+- **静默降级** (返回假数据且不报错不记日志) **生产路径禁止**
+- `stub-scan` 脚本在 commit 前 + /build 验收时自动检测
+
+### app 主线 mock 路由 (额外约束)
+
+**允许 mock 推进** (前端不阻塞):
+- 后端 API schema 已在 spec.md 数据契约 + FROZEN
+- IAP 沙盒环境配置 ready, 真实 IAP 暂用 mock
+
+**禁止 mock 推进** (硬阻塞):
+- bundle id / IAP product id 未锁 (生产环境立刻暴露)
+- 推送 token 字段未定 (APNs / FCM 格式不同, mock 让真集成时全部错)
+- 支付服务端验证流程未定 (mock 让前端写错 IAP 收据上送格式)
+
+mock 必须显式标识 + 记入 status.md optimistic 清单 + 指明被替换的文件路径.
+
+### 决策生命周期
+
+实现中遇 spec 未定义的决策 (空状态处理 / 边界行为) → 不默默推断. 按 `.claude/rules/core.md § 决策生命周期` 分类:
+
+- **optimistic** — 已按默认方案实现, 等检查点确认 (低回滚成本, 累 ≥5 触发检查点)
+- **deferred** — 跳过先做别的 (高回滚成本但不阻塞)
+- **阻塞** — 停下等人 (高回滚成本 + 阻塞后续任务)
+
+所有 optimistic 项必须能在 status.md 找到记录 + 指明被替换的明确文件路径.
+
+### 禁止模式 (与 `.claude/rules/core.md § 禁止模式` 对齐)
+
+| 禁止 | 信号 |
+|------|-----|
+| 预建抽象 | 为"将来可能需要"写接口/基类/工厂, 当前只有一个实现者 |
+| 幽灵依赖 | package.json/go.mod 出现任务未要求的新条目 |
+| 防御性冗余 | 同一检查逻辑在 >1 层重复且无跨层契约 |
+| 范围蠕变 | 改动与当前 ACCEPT 无关, 删掉后验收仍通过 |
+
+---
+
+## Step 6: bundle id 跨文件一致性
+
+**触发条件**: 改动以下任一文件:
+- `ios/*/Info.plist`
+- `ios/*.xcodeproj/project.pbxproj`
+- `android/app/build.gradle*`
+- `app.config.js` / `app.json` / `package.json`
+- `*.entitlements`
+- IAP 配置 / RevenueCat dashboard 配置
+
+**校验** (调 `app-gate.sh sg_app_bundle_coherence`):
+
+1. 从 spec.md `## 命名锁定` 章节提取 bundle id (formal value)
+2. grep 代码库所有出现位置, 必须全部 = locked value
+3. 禁止 `${VAR}` / `$(...)` 变量拼接 (硬阻塞)
+4. 不一致 → 阻塞 commit + stderr 列冲突文件
+
+**变更 bundle id 必须回 /anchor**, 重新走命名锁定 6 项, 不在 /build 静默修改. 参照 `.claude/rules/core.md § 硬规则 app 补丁 → NEVER bundle id 锁定后变更`.
+
+---
+
+## Step 8: scope check
+
+`pre-commit-scope.sh` 在 commit 前对照 TASK.FILES 检查改动:
+- 改动文件 ⊆ FILES → 放行
+- 改动文件 ⊃ FILES → 阻塞. 评估是任务定义不准 (更新 FILES) 还是 scope creep (拆新任务)
+- PLATFORM=iOS 但改了 Android 目录 → 阻塞 (即使 FILES 列了, FILES 与 PLATFORM 不一致也得修)
+
+---
+
+## Step 9-10: status.md + commit
+
+按 `.claude/rules/core.md § DONE-TEMPLATE` 填:
+- 任务状态 `- [x]`
+- TESTS / SMOKE_RESULT / STUB_REMAINING / HUMAN_STATUS / PENDING_CONFIRM / COMMIT / STATUS_UPDATED
+
+commit 信息含 TASK 编号. ai-rules CLAUDE.md 硬规则授权 commit 自动执行 (无需每次请示).
+
+---
+
+## Step 11: 写完成信号
+
+```bash
+mkdir -p .claude/state
+echo "{\"skill\":\"build\",\"epoch\":$(date +%s)}" > .claude/state/skill-signal.json
+```
+
+---
+
+## OUTPUT_GATE
+
+由 `stop-app-audit.sh` 验收:
+- 测试通过 + scope 在 TASK.FILES 内
+- PLATFORM 隔离 OK + bundle id 一致
+- stub-scan 无未声明的 mock 残留
+- commit 成功 + status.md 任务状态 `- [x]`
+- skill-signal.json 写入
+
+**OUTPUT_GATE 不通过时:**
+- 失败回灌为 stderr
+- AI 补全后才能进下一任务
+- 连续 3 次失败触发熔断器 (软熔断: 跳过当前任务; 连续 2 个软熔断 → 硬熔断, 等人)
+
+---
+
+## 完成后下一步
+
+任务链自动续接 (参照 `.claude/rules/core.md § 任务链自动续接`):
+- 下一任务存在且无阻塞 → 直接开始, 不问用户
+- 触发检查点 (optimistic ≥5 / 依赖触发 / 里程碑) → 输出检查点, 等用户确认
+- 全部完成或全部阻塞 → 停, 汇报状态
+
+尾标记:
+
+`完成: T<N> 已实现并 commit, 测试 PASS, 下一任务 T<N+1> 进入 /build`
+
+或检查点触发:
+
+`等你: optimistic 项累计 5 个, 触发检查点, 请审下表`
+
+或阻塞:
+
+`停住: T<N> 依赖 deferred 决策"账号体系", 跳到 T<N+2> 实现"导出报表" (无阻塞)`

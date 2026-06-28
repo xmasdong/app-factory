@@ -1,0 +1,10 @@
+# 运行时状态(每个项目自己生成,不入库)
+.claude/state/
+**/state/
+*.log
+# 依赖
+node_modules/
+.DS_Store
+# 各项目实例(工厂只放 skill,不放具体 app)
+out/
+dist/
