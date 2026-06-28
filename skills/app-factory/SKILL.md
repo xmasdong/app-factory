@@ -41,9 +41,9 @@ description: Unified entry / router for the App Factory app-dev pipeline. Reads 
 
 ## 关键约束(路由也不能破)
 
-- **不绕闸门**:每关 OUTPUT_GATE 机械验收(`sg_app_*`)照旧,过不了不放行
+- **闸门 = 建议优先**:每关 OUTPUT_GATE 自检(`sg_app_*`)**默认只给建议、不阻塞**(尊重各人开发流程);`export APP_FACTORY_MODE=strict` 才硬挡。详见 README「闸门哲学」
 - **2-touch 停点保留**:discover 后必须等用户看 mockup,不自动推进
-- **安全底线**:`.env` / 密钥 / `force push` 永远等人
+- **安全底线**:`.env` / 密钥 / `force push` 永远等人(不受 advisory 影响)
 - 路由只读状态 + 调对应 skill,不改任何产物
 
 ## 与各关 skill 的关系

@@ -16,6 +16,15 @@
 
 全程 AI 自主,**只在看 mockup 时找你一次**(2-touch)。每关有机械验收闸门,过不了不放行。
 
+## 闸门哲学:建议优先,不硬锁
+
+每个人开发 app 都按自己的要求来。**本工厂的闸门默认是「建议」不是「强制」** —— 跑出自检清单、列出没满足的项,但**不阻塞你**,你自行决定取舍。
+
+- **默认(advisory)**:闸门 = 建议清单,照样放行
+- **严格(strict)**:`export APP_FACTORY_MODE=strict` → 闸门硬阻塞(适合 CI、或想被流程逼着做全的自用场景)
+
+机制:所有闸门 hook 经 `app/hooks/_lib.sh` 的 `emit_blocked`,默认建议模式下只提示 + 放行。
+
 ## 安装 / 使用
 
 **前置**:[Claude Code](https://claude.com/claude-code)(skill 机制依赖它)。skill 内容中文为主。
@@ -64,7 +73,7 @@ echo 'export AI_RULES_ROOT="'$(pwd)'/app-factory"' >> ~/.zshrc && source ~/.zshr
 
 ## 为什么靠谱(不是玩具)
 
-- **每关机械验收**(`sg_app_*` 硬检查函数),过不了阻塞
+- **每关机械自检**(`sg_app_*` 检查函数)——**默认只给建议、不阻塞**(尊重各人开发流程,我们只提供建议);要硬闸门(CI / 严格自用):`export APP_FACTORY_MODE=strict`
 - **AI 自决要附证据**(市场调研禁用训练记忆,必须真 URL/API 响应)
 - **决策生命周期**(optimistic / deferred / frozen / fused)+ 熔断器防死循环
 - **多端一致性**强约束(PLATFORM 字段贯穿任务/数据契约/能力矩阵)

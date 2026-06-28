@@ -29,8 +29,17 @@ emit_blocked() {
     echo "_用户可随时运行 \`cat .claude/state/last-stop-reason.md\` 查看最近阻塞原因._"
   } > "$reason_file" 2>/dev/null
 
-  # stderr: 详情(msg)给 AI 看用于修复; 最后一行精简指令, 不让 AI 整段复读
+  # stderr: 详情(msg)给 AI 看用于修复
   echo "$msg" >&2
+
+  # App Factory: 默认「建议模式」— 不阻塞(尊重各人开发流程,我们只给建议)。
+  # 要硬闸门(CI / 严格自用):export APP_FACTORY_MODE=strict
+  if [[ "${APP_FACTORY_MODE:-advisory}" != "strict" ]]; then
+    echo "" >&2
+    echo "💡 [app-factory] 以上为建议,未阻塞。开硬闸门: export APP_FACTORY_MODE=strict" >&2
+    exit 0
+  fi
+
   echo "" >&2
   echo "⚠️ ${hook} 阻塞. 收尾单独一行 \`停住: <一句话处置意图>\`, 不要复读上文. 详情已落盘 .claude/state/last-stop-reason.md." >&2
 }
