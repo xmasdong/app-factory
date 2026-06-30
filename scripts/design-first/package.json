@@ -1,0 +1,23 @@
+{
+  "name": "design-first-visual-verify",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "design-first 视觉验证脚本:visual-diff(pixelmatch 截图对比 → ui-diff.json)+ token-match(computed 样式 vs tokens.json → token-match.json)。产出 JSON key 严格对齐 app-gate.sh 闸门。读 $CLAUDE_PROJECT_DIR 当项目根。",
+  "bin": {
+    "visual-diff": "./visual-diff.mjs",
+    "token-match": "./token-match.mjs"
+  },
+  "scripts": {
+    "visual-diff": "node visual-diff.mjs",
+    "token-match": "node token-match.mjs",
+    "verify": "node visual-diff.mjs && node token-match.mjs"
+  },
+  "devDependencies": {
+    "pixelmatch": "^6.0.0",
+    "pngjs": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

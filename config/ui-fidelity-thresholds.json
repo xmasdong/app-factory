@@ -1,0 +1,10 @@
+{
+  "_doc": "UI 视觉保真阈值 (FROZEN)。visual-diff.mjs 与闸门 sg_app_ui_visual_diff 参考。",
+  "pixel_mismatch_pct": { "pass": 3, "warn": 8, "fail_above": 8 },
+  "ssim_min": 0.92,
+  "token_mismatch_max": 0,
+  "vlm_severity_block": "major",
+  "mask_dynamic_regions": true,
+  "freeze_animations": true,
+  "fixed_dpr": true
+}
