@@ -47,22 +47,16 @@ _app_section_content() {
 # ============================================================================
 
 sg_app_project_type() {
-  # 检测 status.md 顶部 PROJECT_TYPE 字段, 必须 = app
+  # 检测 status.md 顶部 PROJECT_TYPE 字段, 必须 = app 或 design-first(同走 app 主线闸门)
   local pt
   pt=$(_app_get_status_field "PROJECT_TYPE")
   if [[ -z "$pt" ]]; then
-    echo "status.md 缺 PROJECT_TYPE 字段 (期望 app)"
+    echo "status.md 缺 PROJECT_TYPE 字段 (期望 app 或 design-first)"
     return
   fi
-  if [[ "$pt" != "app" ]]; then
-    echo "PROJECT_TYPE=${pt}, app 主线不该被触发"
+  if [[ "$pt" != "app" && "$pt" != "design-first" ]]; then
+    echo "PROJECT_TYPE=${pt}, app 主线不该被触发 (合法: app / design-first)"
     return
-  fi
-  # 反向 sniff: ios/ android/ Info.plist 存在但 PROJECT_TYPE != app
-  if [[ "$pt" != "app" ]]; then
-    if [[ -d "$ROOT/ios" || -d "$ROOT/android" || -f "$ROOT/ios/Info.plist" ]]; then
-      echo "检测到 ios/ android/ Info.plist 但 PROJECT_TYPE != app, 应升级"
-    fi
   fi
 }
 
@@ -633,7 +627,7 @@ sg_app_data_contract() {
 
   # 契约表存在 (markdown 表格数据行 ≥1)
   local rows
-  rows=$(echo "$content" | grep -E "^\|" | grep -vE "^\|[[:space:]-:|]+\|?[[:space:]]*$" 2>/dev/null | wc -l | tr -d ' ')
+  rows=$(echo "$content" | grep -E "^\|" | grep -vE "^\|[[:space:]:|-]+\|?[[:space:]]*$" 2>/dev/null | wc -l | tr -d ' ')
   if (( rows < 2 )); then
     echo "数据契约缺契约表 (字段/类型/来源 表格数据行 ${rows} < 2)"
     return
