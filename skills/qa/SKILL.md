@@ -5,6 +5,19 @@ description: "Quality-assure the app before store submission — multi-platform 
 
 # /qa — A-GATE 3 验收 (app 主线)
 
+> ⚙️ **主执行路径 = AI 调用 Workflow 工具**(script = `scripts/workflows/qa.workflow.js`)。
+> 推荐用户先开 **ultracode 模式**(让 AI 默认倾向多 agent 编排;skill/脚本无法自行开启它,也不存在 `claude workflow` shell 命令)。
+> 编排路径四质量模式:fan-out(每端/每合规节一 worker)+ pipeline(端内 跑链路→截3viewport)+ adversarial verify(每条 reviewer claim × N skeptic 独立质疑,多数过)+ completeness critic(Synthesis 单 agent 用确定性脚本写闸门 state)。
+>
+> **降级:未开 ultracode / 不便编排时**,单 agent 按下方 SKILL.md 原 7 步顺序串行执行,**产物与闸门 key 一字不差**:
+> - **Step 1 覆盖契约**:逐链路对账(串行逐条)。
+> - **Step 2 多端 smoke**:对 PLATFORM-MATRIX 声明的端逐端跑核心链路、各端用 `ui-snapshot.sh` 截 3 viewport,deferred 端写理由。失去并行只是更慢,逻辑等价。
+> - **Step 4 反绕过 + paywall**:不开 N-skeptic,改为单 agent 自检 + **强制截图证据**(`no-bypass.png` / `paywall-full.png` / `iap-sandbox.png`)作为最强证据(本文件第 275 行已承认此步归 honor system),把"对抗"降级为"**必须有真实登录截图否则判 FAIL**"的硬证据闸门。
+> - **Step 5 合规 9 节**:逐节串行扫。
+> - **Step 6/7**:写 `verify-report.json` + `asr-survival-scan.json`,跑 `bash scripts/app-gate.sh app-gate qa` 复核,过则写 `skill-signal.json` + 推进 A-GATE 4。
+>
+> **降级核心**:并行→串行(慢但不丢覆盖);对抗多投票→单 agent + 强制截图证据(防 LARP 的兜底)。所有写入仍走确定性脚本 / 固定 schema,闸门 state 与编排路径一字不差。
+
 > 🔗 **App Factory 集成**:Step 3 截图存档调 `app-store-screenshots`(3 视口 × 每端);追加 `audit` skill 做无障碍/性能/响应式/反模式技术检查;合规复扫调 `app-store-review-survival`(已集成)。
 
 **作用:** 在写完代码后, 把整个 app 当成"审核员要看的产品"再走一遍. 覆盖契约对账 + 多端 smoke + 截图存档 + 审核员路径预演 + 合规复扫. 没过 /qa 不允许进 /ship.

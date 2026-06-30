@@ -28,6 +28,37 @@ description: "Shape product cognition into a complete spec.md — PRD challenge 
 
 ---
 
+## 主执行路径 (AI 调 Workflow 工具编排)
+
+**本 skill 主执行路径 = AI 调用 Workflow 工具** (Claude Code 内置工具, 非 shell; 不存在 `claude workflow` 命令), `script = scripts/workflows/shape.workflow.js` (Read 后传入)。**推荐 ultracode 模式** (用户手动开启的会话高级模式 — skill/脚本无法自己开它; ultracode 只让 AI 默认倾向用 Workflow 工具做多 agent 编排)。
+
+该 .workflow.js 是 fan-out-then-converge 编排 (两次扇出 + completeness critic 收敛):
+
+```
+Precheck   (串行) — 校验 INPUT_CONTRACT + 读 lessons.md, 不满足 throw 终止
+Cognition  (单 agent, FROZEN) — 全局认知 + 枚举 features[] (扇出唯一输入)
+Challenge  (parallel × 5 PRD 视角 + PLATFORM-MATRIX) — 第一次扇出, 逐功能列 gaps[]
+Fault      (单 agent) — 故障想象力, 吃 Challenge.gaps (SKILL §91 依赖关系落地)
+Contract   (单 agent) — 数据契约逐字段对账 + 多端消费方
+Tasks      (单 agent) — TASK-TEMPLATE 拆任务含 PLATFORM + [CRITICAL] + 覆盖契约
+Review     (parallel × 4 角色: 需求/证据/范围/多端体验) — 第二次扇出, 对抗审查
+Synthesis  (单 agent = 唯一写 state 口) — 汇编完整 spec.md + 跑 app-gate.sh shape 产 clearance-shape.json
+```
+
+收尾闸门一致: 无论主路径还是降级, Synthesis/收尾都跑 `bash scripts/app-gate.sh app-gate shape` 产 `clearance-shape.json`, 机械验收挡住偷工 (worker 只产『发现 JSON』, 确定性 state 仍由 scripts/ 脚本生成, 严禁手写)。
+
+### 降级: 单 agent 顺序 (兜底, 下方"## 执行计划"现有路径即此)
+
+未开 ultracode / Workflow 工具不可用 / 项目过小 (单端 + 无 [CRITICAL] 模块) / 用户不想多 agent 时, 降级为**一个 agent 按 Step0→6 串行跑**。把本来并行的两处改为「同一助理消息内一次性产出多份」而非真并发:
+
+- **Step 1.5**: 在一条消息里**依次对 5 个视角逐一扫** (不开 5 subagent), 逐功能列 gaps。
+- **Step 3**: 在一条消息里**以 4 个角色口吻各写一段审查** (Step 3 "并发" 降级为"串行多角色自审"), 仍验收 `roles[]` ≥4 含"多端体验"子串。
+- 故障想象力 / PLATFORM-MATRIX / 数据契约 / 拆任务 本就串行, 无差异。
+
+**代价**: 并行扇出能让每个视角/角色独立深挖、互不污染上下文 (避免 5 视角写成"同上"套话、4 角色越权互相妥协); 单 agent 降级下质量靠 prompt 纪律保。**最终闸门一致** — 哪条路收尾都跑 `app-gate.sh app-gate shape` 产 `clearance-shape.json` 机械验收。
+
+---
+
 ## 执行计划
 
 ```

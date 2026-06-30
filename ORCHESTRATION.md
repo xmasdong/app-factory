@@ -17,6 +17,7 @@
 
 **design-first 引擎(导入图/设计稿 → app + 后端)**:
 `design-restore`(设计→高保真app,reify≠create)· `backend-forge`(功能/契约→完整后端API)。经 `docs/design/design-manifest.json` + `api/openapi.yaml` 两份 FROZEN 机读产物当桥,挂在 shape/build/qa 内(不进路由/不进 hook)。详见 `ROADMAP-design-first.md`。
+这两 skill 真跑时主路径 = AI 调用 **Workflow 工具**编排(传 `scripts/design-first/*.workflow.js` 为 `script`,**非 shell CLI**);**推荐用户开 ultracode 会话模式**(非 skill 可强制);未开/不便编排时降级 = 单 agent 顺序。**不存在 `claude workflow` shell 命令。**
 
 **可选前置(通用开发轨,非本仓必需)**:`setup → spec → impl → check → verify → release` 这类 generic 开发流水线;若使用,app 轨 `ship` 以 generic `release` 的 release-ready 为前置。本仓 app 轨自带闸门即可独立运行。
 

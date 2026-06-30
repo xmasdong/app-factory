@@ -9,7 +9,7 @@
 ## 0. 三句话先讲清
 
 1. **真 app 跑 design-restore / backend-forge，不要走 SKILL.md 里那套线性 Step**。线性 Step 只是「单 agent 降级档」（没装 workflow、或调试单点时用）。真跑用 `Workflow 工具(AI 调用·非CLI) scripts/design-first/<skill>.workflow.js` 编排。
-2. **为什么必须 ultracode（Workflow 多 agent 编排）**：单 agent 顺序做不到「每个 endpoint / 每屏全覆盖 + 对抗验证 + 收敛环」这种质量与覆盖（见 §3）。
+2. **为什么主路径是 Workflow 多 agent 编排（推荐用户开 ultracode）**：单 agent 顺序做不到「每个 endpoint / 每屏全覆盖 + 对抗验证 + 收敛环」这种质量与覆盖；ultracode 只是让 AI 默认倾向调 Workflow 工具,skill 强制不了用户会话模式（见 §3）。
 3. **唯一对外接口是 4 个 state JSON**：编排跑完，闸门 `app-gate.sh` 只读这 4 个文件验收。脚本写 JSON 的 key 必须逐字对齐（见 §4），写错一个 key 整关失效。
 
 两条真相源（FROZEN，下游全派生）：
@@ -178,20 +178,20 @@ jq '.result, (.missing_fields|length), (.extra_fields|length)' "$CLAUDE_PROJECT_
 
 ---
 
-## 3. 必须用 ultracode 编排（写死）
+## 3. 主路径=AI 调用 Workflow 工具编排（写死）；推荐用户开 ultracode；降级=单 agent
 
 > ⚠️ **核心澄清**:ultracode/Workflow 是 **Claude Code 会话内的【工具】**,由 **AI 调用**(传 `script` 参数)——**没有 `claude workflow` shell 命令**(本机 `claude --help` 无此子命令)。本文出现的"运行 xxx.workflow.js"一律指:**AI 调用 Workflow 工具,把该 .js 文件内容作为 `script` 传入**。`.workflow.js` 文件是仓库里留存的编排脚本源,供 AI 读取后传给工具;脚本内 agent 再用 Bash 调 `scripts/design-first/` 下的确定性脚本产出 state JSON。
 
-### 3.1 为什么必须 ultracode，单 agent 不行
+### 3.1 为什么主路径是 Workflow 编排（推荐 ultracode），单 agent 仅降级
 
-| 质量维度 | 单 agent 顺序做 | Workflow 多 agent 编排 |
+| 质量维度 | 单 agent 顺序做（降级档） | Workflow 多 agent 编排（主路径） |
 |---|---|---|
 | **全覆盖** | 顺序写到第 8 个 endpoint 时上下文已满，前面的覆盖会被遗忘/糊弄 | `parallel` 按 endpoint / 按屏×视口扇出，每个 worker 独立上下文，**N 个全跑到** |
 | **对抗验证** | 自问自答 = 回声室，自己写的规则自己说对 | `parallel` 起 N 个独立 skeptic，各自不看彼此结论，多数票才留 |
 | **收敛** | 一遍过，diff 不达标也没有再修一轮的机制 | screen worker 内 `for` 循环 + 单调降判据 + k 轮熔断，**修到收敛或停** |
 | **完整性核对** | 没有「谁来检查我漏了没」 | Synthesis phase 的 completeness critic 专门核覆盖再写 state |
 
-四个 ultracode 质量模式在脚本里的归位：
+四个 Workflow 编排模式在脚本里的归位：
 
 - **fan-out 全覆盖** = `parallel(endpoints)` / `parallel(screen × viewport)`
 - **adversarial verify** = `parallel(N skeptic)` 多数投票
@@ -346,8 +346,8 @@ const synth = await agent(
 return { extract, perScreen, synth }
 ```
 
-> 这两段同时写进对应 `skills/backend-forge/SKILL.md`、`skills/design-restore/SKILL.md` 的新章节 `## Workflow 编排(必跑,写死)`，并在执行计划顶部加一句：
-> 「真 app 跑时不走线性 Step，改 `Workflow 工具(AI 调用·非CLI) scripts/design-first/<skill>.workflow.js`；线性 Step 仅作单 agent 降级档。」
+> 这两段同时写进对应 `skills/backend-forge/SKILL.md`、`skills/design-restore/SKILL.md` 的新章节 `## 主执行路径:AI 调用 Workflow 工具编排（推荐用户开 ultracode;降级=单 agent 顺序）`，并在执行计划顶部加一句：
+> 「真 app 跑时不走线性 Step，主路径 = AI 调用 Workflow 工具(非 shell CLI),script 取 `scripts/design-first/<skill>.workflow.js` 内容；推荐用户开 ultracode 模式;线性 Step 仅作单 agent 降级档。」
 
 ---
 

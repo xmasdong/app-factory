@@ -5,6 +5,18 @@ description: "Discover product viability autonomously — extract keywords, run 
 
 # /discover — Phase A 探索 (Autonomous, 不问用户)
 
+> ⚙️ **执行模型(主路径 + 降级,严格遵守)**
+>
+> **本 skill 主执行路径 = AI 调用 Workflow 工具**(Claude Code 内置工具,非 shell;不存在 `claude workflow` 命令),`script` = `scripts/workflows/discover.workflow.js`(Read 后传入)。该脚本用 `meta + phase + parallel/pipeline + agent({schema})` 编排多 agent:Frame(抽关键词 FROZEN)→ Research(sources×actions 笛卡尔积扇出堆一手证据)→ Decide(propose→独立 red-team 对抗,证据不足回灌补一轮)→ Visualize(codex-image-bridge)→ Synthesis(completeness critic 跑 `app-gate.sh` 产闸门 state)。
+>
+> **推荐用户开 ultracode 模式**(用户手动开的会话高级模式,让 AI 默认倾向用 Workflow 工具;skill/脚本无法自己开启它,故只推荐、不强制)。
+>
+> **降级路径 = 单 agent 顺序**(未开 ultracode / Workflow 工具不可用 / 不便编排时的 graceful degradation。下方"## 执行计划"原始步骤本来就能跑,即为此降级):
+> - **Step0** 抽关键词 + 读 discarded → **Step1** 一个 agent 串行跑 6 项强制调研(curl itunes + WebSearch 各平台 + 抓差评 + 找死亡案例 + 写反方,慢但完整)→ **Step2** 同一 agent 自决 5 字段并自附反方风险(⚠️ 无独立红队:prompt 须强制"先写方向,再切换红队人格攻击自己,反方论据不得少于 3 且每条带 URL,否则重写";建议补一段红队自检 checklist 否决重写弥补)→ **Step3** codex-image-bridge 出 ≥4 张 mockup(退化可 ASCII/文字线稿)→ **Step4** 写 spec.md 3 章节 + discovery-summary.md → **Step5** 跑 `./scripts/app-gate.sh app-gate discover` 产 `clearance-discover.json` + skill-signal,以 hard-stop 收尾。
+> - **降级代价**:① 一手数据采集串行,慢;② 无独立对抗,反方质量靠单 agent 自律(易凑数);③ "需补证据"无法自动回灌定向调研,只能整段重跑。
+> - **触发降级的判据**:Workflow 工具不可用 / 项目根无 `CLAUDE_PROJECT_DIR` / 用户明确要省 token / 关键词已极清晰且竞品稀少(扇出收益低)。
+> - **两条路产物完全一致**:`spec.md`(3 章节)+ `discovery-summary.md` + `clearance-discover.json` + `skill-signal.json`。lockdown hook 链对二者无感。
+
 > 🎨 **design-first 旁路**:`PROJECT_TYPE=design-first`(已有设计稿)时——**跳过市场调研重调研 + 跳过 Step3 mockup 生成**(设计稿即真图),只确认 TARGET_MARKET(合规相关)+ 问 REVENUE_MODEL,PRODUCT_FORM/TARGET_USER 从设计稿+用户一句话反推。**但必须照常产出 `clearance-discover.json` + `discovery-summary.md`**(lockdown 硬依赖,否则 hook 链断)。
 
 > 🔗 **App Factory 集成 — 技术栈初选**:Step 2 的 `TECH_STACK` 字段不要只写一行。用 `app/templates/sections/tech-stack-decision.md` 出**初选**:从能力需求倒推 + **≥2 候选对比矩阵**(含 **AI-可建性** 维度,本流水线全 AI 驱动)。接近难分的标 `待 spike 定`,留给 lockdown spike 决。mockup 用 `codex-image-bridge`。

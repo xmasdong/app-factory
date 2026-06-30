@@ -5,6 +5,10 @@ description: "Build one task to passing tests with PLATFORM isolation, bundle id
 
 # /build — A-GATE 2 实现 (app 主线)
 
+> ⚙️ **主执行路径 = AI 调用 Workflow 工具**(script = `scripts/workflows/build.workflow.js`):pipeline 逐 TASK 串行 × 每 TASK 内 4 phase(合同闸门 → 并行实现/测试/美术 → 测试 loop 熔断 → 对抗 review + 确定性闸门 commit)。**推荐 ultracode 模式**(AI 默认倾向用 Workflow 编排;skill 强制不了用户模式,也不存在 `claude workflow` shell 命令)。
+>
+> **降级路径(未开 ultracode / 不便编排):单 agent 顺序执行下面 11 步,完全可用且是 build 的自然形态(主干本就串行)。** 对应关系:Step 1-3 = 合同 / GATE1 三问 / PLATFORM 自检;Step 4-5 = **先写测试再实现**(同一 agent 顺序做,失去并行但不失正确性);Step 7 = 自己跑 `fix→retest` 最多 3 轮(loop 退化成 agent 自循环,熔断逻辑用 retry 计数手动维持:连续 3 轮不转绿 = 软熔断跳过本任务,连续 2 个软熔断 = 硬熔断停等人);对抗验证退化成 agent **自审一遍禁止模式表 + stub-scan**(承认弱于独立 critic,补偿:可显式让 `/code-review` 或 `simplify` skill 跑一遍 diff 当外部第二视角);Step 6/8 = 调 `pre-commit-scope.sh` + `app-gate.sh`(`sg_app_bundle_coherence`)+ `stub-scan`;Step 9-11 = status.md + commit + skill-signal.json。**闸门 `.sh` 脚本与编排版完全一致,所以降级只丢「并行加速 + 独立对抗视角」,不丢任何 gate 保证。** 对纯逻辑(非 UI、无美术)任务,降级与编排版差距最小(Phase 1 本就只剩 A‖B 两轨)—— **优先直接降级以省 agent 开销**。
+
 > 🎨 **design-first**:UI 任务以 `docs/design/tokens.json` 为**硬基准**(只引用 token 禁硬编码值);Backend 通道挂 `backend-forge` codegen 产物;前端 mock **必须由 `api/openapi.yaml` 生成**(prism/msw)= 前后端同源不 drift。UI 还原走 `design-restore` 渲染+diff 段(reify≠create,别和 frontend-design 抢)。
 
 > 🔗 **App Factory 集成 — UI 与美术**:

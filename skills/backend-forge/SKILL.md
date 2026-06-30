@@ -1,6 +1,6 @@
 ---
 name: backend-forge
-description: "功能/契约 → 完整后端 API 服务。从 shape 数据契约 + manifest.screens 派生 screen→entity→endpoint(草稿,inferred 需人确认),openapi.yaml(3.1)先定稿当 SSOT,强制 ownership 越权矩阵,codegen 可靠区(Supabase migration+RLS / DTO / 校验 / SDK),三重夹测试(Schemathesis 契约 + 越权负向 + 业务规则)。真 app 跑时用 ultracode Workflow 编排(按 endpoint 扇出 + 业务规则对抗验证),产 .claude/state/contract-test.json + e2e-contract.json 喂闸门。可单跑,经 shape/build/qa 调用,不进路由、不进 hook 状态机。"
+description: "功能/契约 → 完整后端 API 服务。从 shape 数据契约 + manifest.screens 派生 screen→entity→endpoint(草稿,inferred 需人确认),openapi.yaml(3.1)先定稿当 SSOT,强制 ownership 越权矩阵,codegen 可靠区(Supabase migration+RLS / DTO / 校验 / SDK),三重夹测试(Schemathesis 契约 + 越权负向 + 业务规则)。真 app 跑时由 AI 调用 Workflow 工具编排(按 endpoint 扇出 + 业务规则对抗验证);推荐用户开 ultracode 模式;无法编排时降级单 agent 顺序,产 .claude/state/contract-test.json + e2e-contract.json 喂闸门。可单跑,经 shape/build/qa 调用,不进路由、不进 hook 状态机。"
 ---
 
 # /backend-forge — 功能/契约 → 完整后端 API(App Factory 真 skill)
@@ -12,8 +12,8 @@ description: "功能/契约 → 完整后端 API 服务。从 shape 数据契约
 
 > ⚠️ **真 app 跑法(读到这里先看这条)**:为真实 app 跑 backend-forge **不走下面的线性 Step**,而是
 > `# AI 调用 Workflow 工具(Claude Code 内置·非 shell CLI),script 取以下文件内容: /Users/xmasdong/opc/app-factory/scripts/design-first/backend-forge.workflow.js`
-> 即用 **ultracode Workflow 多 agent 编排**:openapi 先定稿当 SSOT → **按 endpoint 扇出**(每 endpoint:生成实现 → 契约测试 → 越权负向,pipeline 串)→ **业务规则对抗验证**(N skeptic 各自质疑,多数过才留)→ completeness critic 汇总写闸门 JSON。
-> **线性 Step 1..7 仅作单 agent 降级档**(没装 Workflow runtime 时手跑)。详见 [## 用 ultracode 编排执行(强制)](#用-ultracode-编排执行强制)。
+> 即由 AI 调用 Workflow 工具做**多 agent 编排**(ultracode 模式下 AI 默认倾向用它):openapi 先定稿当 SSOT → **按 endpoint 扇出**(每 endpoint:生成实现 → 契约测试 → 越权负向,pipeline 串)→ **业务规则对抗验证**(N skeptic 各自质疑,多数过才留)→ completeness critic 汇总写闸门 JSON。
+> **线性 Step 1..7 仅作单 agent 降级档**(没装 Workflow runtime 时手跑)。详见 [## 主执行路径:AI 调用 Workflow 工具编排(推荐用户开 ultracode;降级=单 agent 顺序)](#主执行路径ai-调用-workflow-工具编排推荐用户开-ultracode降级单-agent-顺序)。
 
 **作用:** 把"功能 + 数据契约"塑形成**能上线生产的后端 API 服务**。职责见契约:① 从 screen 派生 entity 再派生 endpoint(草稿,inferred 字段需人确认)→ openapi.yaml **先定稿当 SSOT**;② 强制 **ownership 越权矩阵**(谁能 CRUD 谁的数据);③ codegen 可靠区(Supabase migration + RLS / DTO / 校验 / SDK / 测试骨架);④ 三重夹测试(Schemathesis property-based 契约 + 越权负向 + 业务规则走 ACCEPT)。
 
@@ -53,7 +53,7 @@ description: "功能/契约 → 完整后端 API 服务。从 shape 数据契约
 
 ## 执行计划(线性档 — 仅单 agent 降级用)
 
-> 真 app 跑请直接跳到 [## 用 ultracode 编排执行(强制)](#用-ultracode-编排执行强制),不要顺序硬写下面这些 Step。
+> 真 app 跑请直接跳到 [## 主执行路径:AI 调用 Workflow 工具编排(推荐用户开 ultracode;降级=单 agent 顺序)](#主执行路径ai-调用-workflow-工具编排推荐用户开-ultracode降级单-agent-顺序),不要顺序硬写下面这些 Step。
 
 ```
 - [ ] Step 0: 读 lockdown/backend-readiness.md(选型) + spec.md 数据契约 + manifest.screens
@@ -319,13 +319,13 @@ echo "{\"skill\":\"backend-forge\",\"epoch\":$(date +%s)}" > .claude/state/skill
 
 ---
 
-## 用 ultracode 编排执行(强制)
+## 主执行路径:AI 调用 Workflow 工具编排(推荐用户开 ultracode;降级=单 agent 顺序)
 
-> ⚠️ **"用 ultracode"到底怎么操作**:Workflow/ultracode 是 **Claude Code 会话内的【工具】**,由 **AI(你)调用**(给它传 `script` 参数)——**不存在 `claude workflow` 这种 shell 命令**。所以"执行本 skill"=你调用 **Workflow 工具**,`script` = `scripts/design-first/backend-forge.workflow.js` 的内容(先 Read 它再传)。脚本里的 agent 用 **Bash 调本仓 `scripts/design-first/` 的确定性脚本**(`contract-test.sh` / `e2e-contract.sh` / `ownership-probe.sh`)产出闸门读取的 state JSON——这些脚本是唯一可信的 state 产出口,不要让 agent 手写 JSON。
+> ⚠️ **主路径到底怎么操作**:**Workflow 是 Claude Code 会话内的【工具】,由 AI(你)调用**(给它传 `script` 参数)——**不存在 `claude workflow` 这种 shell 命令**。**ultracode 是用户手动开的会话高级模式**(让 AI 默认倾向调 Workflow),skill/脚本无法自己开启它,只能推荐用户开。所以"执行本 skill 主路径"=你调用 **Workflow 工具**,`script` = `scripts/design-first/backend-forge.workflow.js` 的内容(先 Read 它再传)。脚本里的 agent 用 **Bash 调本仓 `scripts/design-first/` 的确定性脚本**(`contract-test.sh` / `e2e-contract.sh` / `ownership-probe.sh`)产出闸门读取的 state JSON——这些脚本是唯一可信的 state 产出口,不要让 agent 手写 JSON。
 
-**真 app 跑 backend-forge 必须用 Workflow 工具编排,不是单 agent 顺序硬写。** 单 agent 顺序写时,几十个 endpoint 的"生成实现→契约→越权"和每条业务规则的对抗验证会被压成一条线、互相污染上下文、且没有"覆盖核对"这一环——漏一个 endpoint 没越权测试也发现不了。Workflow 把它拆成**四个 phase**,把 ultracode 四质量模式归位:
+**真 app 跑 backend-forge 的主路径 = AI 调用 Workflow 工具编排,不是单 agent 顺序硬写(单 agent 仅降级档)。** 单 agent 顺序写时,几十个 endpoint 的"生成实现→契约→越权"和每条业务规则的对抗验证会被压成一条线、互相污染上下文、且没有"覆盖核对"这一环——漏一个 endpoint 没越权测试也发现不了。Workflow 把它拆成**四个 phase**,把 Workflow 四编排模式归位:
 
-| ultracode 模式 | 在本脚本的落点 |
+| Workflow 编排模式 | 在本脚本的落点 |
 |---|---|
 | **fan-out 全覆盖** | `parallel(endpoints)` — 每 endpoint 一个 worker,全量覆盖,不抽样 |
 | **adversarial verify** | `parallel(N skeptic)` 对每条业务规则独立质疑,多数投票 keep/kill(各 skeptic **不看彼此结论**,否则是回声室) |
