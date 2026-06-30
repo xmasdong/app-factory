@@ -913,10 +913,18 @@ cmd_app_gate() {
 
   case "$gate" in
     discover)
-      # Phase A: 定位 + 市场 + mockup + 决策卡口
-      sg_run "$(sg_app_product_lock)" "Step 0: 产品定位 5 字段齐"
-      sg_run "$(sg_app_market_evidence)" "Step 0.5: 市场调研 5 子节 + 反方 ≥3"
-      sg_run "$(sg_app_visual_artifact)" "Step 0.7: 概念视觉 mockup"
+      # Phase A: 定位 + (市场/mockup 视情况) + 决策卡口
+      sg_run "$(sg_app_product_lock)" "Step 0: 产品定位 5 字段齐(有 PRD 时从 PRD 读)"
+      # 市场调研 + mockup 仅「从模糊点子起」才必须;有 PRD / 设计稿 / 明确产品定义 → 可选(不强制、不报缺)
+      if compgen -G "$ROOT/docs/PRD*" >/dev/null 2>&1 || compgen -G "$ROOT/docs/prd*" >/dev/null 2>&1 \
+         || [[ -f "$ROOT/docs/design/design-manifest.json" ]] \
+         || [[ "$(_app_get_status_field PROJECT_TYPE)" == "design-first" ]]; then
+        echo "ℹ️  检测到 PRD/设计稿/明确产品定义 → 市场调研 + mockup 视为【可选】(产品已定义,不强制、不报缺)。需要时仍可手动跑。" >&2
+      else
+        # 从模糊点子起步:市场验证 + mockup 是核心,必跑
+        sg_run "$(sg_app_market_evidence)" "Step 0.5: 市场调研 5 子节 + 反方 ≥3"
+        sg_run "$(sg_app_visual_artifact)" "Step 0.7: 概念视觉 mockup"
+      fi
       sg_run "$(sg_app_discovery_summary)" "Step 0.8: discovery-summary.md 决策卡口产物"
       ;;
     lockdown)

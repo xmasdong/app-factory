@@ -19,6 +19,13 @@ description: "Discover product viability autonomously — extract keywords, run 
 
 > 🎨 **design-first 旁路**:`PROJECT_TYPE=design-first`(已有设计稿)时——**跳过市场调研重调研 + 跳过 Step3 mockup 生成**(设计稿即真图),只确认 TARGET_MARKET(合规相关)+ 问 REVENUE_MODEL,PRODUCT_FORM/TARGET_USER 从设计稿+用户一句话反推。**但必须照常产出 `clearance-discover.json` + `discovery-summary.md`**(lockdown 硬依赖,否则 hook 链断)。
 
+> 📄 **PRD 旁路(产品已定义就别强做市场调研/mockup)**:`docs/` 下已有 PRD、或产品已明确定义,**且用户没明确要竞品调研**时——
+> - **市场调研 = 可选**:不做,或只在用户要时轻验;产品定位 5 字段**从 PRD 读**,不靠市场倒推。
+> - **mockup = 不强制生成**:有 PRD-frontend-ux 等 UI 描述就用它当视觉依据;没有也可**以 spec/计划当 TOUCH-2 检查点**(给用户看"我理解的产品+待确认点",不是非得一张图)。
+> - 仍产 `clearance-discover.json` + `discovery-summary.md`(summary = 从 PRD 提炼的产品定位 + 待你确认点)。
+> - 闸门已配合:有 PRD/设计稿时 `sg_app_market_evidence` / `sg_app_visual_artifact` **自动跳过、不报缺**。
+> - **市场调研/mockup 只在「从模糊点子起步、需先验证再建」时才是核心必跑项**——别普世强加。
+
 > 🔗 **App Factory 集成 — 技术栈初选**:Step 2 的 `TECH_STACK` 字段不要只写一行。用 `app/templates/sections/tech-stack-decision.md` 出**初选**:从能力需求倒推 + **≥2 候选对比矩阵**(含 **AI-可建性** 维度,本流水线全 AI 驱动)。接近难分的标 `待 spike 定`,留给 lockdown spike 决。mockup 用 `codex-image-bridge`。
 
 **作用:** 用户输入"做 X" → AI 全自动跑 (抽关键词 → 市场调研 → 自决 5 字段 → 出 mockup → 写 summary) → 在 Step 5 hard stop 等用户看 mockup 决定。
