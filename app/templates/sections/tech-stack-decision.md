@@ -34,6 +34,30 @@
 - **反方风险:** <这个选择可能错在哪(1 句)>
 - **不确定 → spike:** <若两候选接近,lockdown 技术 spike 跑哪个关键能力来定>
 
+### 4. 后端选型矩阵(后端项目必填;与前端同级严谨)
+
+> 默认 Supabase,但要按**能力需求**对比,不是无脑默认。备选含 **Cloudflare(AI 基建友好)**。
+
+| 维度(1-5,5 最佳) | Supabase | Cloudflare | Firebase | PocketBase |
+|---|---|---|---|---|
+| 关系型 SSOT(schema 当真相源) | 5 | 3(D1=SQLite) | 1(NoSQL) | 4 |
+| **权限/越权可声明(抗 AI 幻觉)** | **5(RLS)** | 2(写 Worker 代码) | 3(rules) | 3 |
+| 实时同步 | 4 | 4(Durable Objects) | 5 | 3 |
+| **AI 基建友好**(跑模型/向量/LLM 网关/RAG/边缘) | 3(pgvector) | **5(Workers AI+Vectorize+AI Gateway)** | 3(Vertex) | 1 |
+| 成本上限可控(避失控账单) | 4 | **5(定价可预测)** | 2(账单易失控) | 5(自托管) |
+| 低锁定 / 可自托管 | 5 | 3 | 1 | 5 |
+| **agent 自助部署**(CLI) | 4(supabase) | **5(wrangler)** | 3 | 3 |
+
+### 5. 后端决策逻辑
+
+- **默认 Supabase**:关系型 + 权限复杂(越权 matters)→ **RLS 把"越权"这个 AI 头号幻觉区变可审计 SQL**,最值。大多数 CRUD / 记录类 app 走这。
+- **选 Cloudflare** 当:① app 本身 **AI 重**(RAG/向量检索/跑模型/LLM 网关)② 要**边缘/全球低延迟** ③ 怕失控账单要**可预测成本** ④ 重 **agent 自助部署**(wrangler)。
+  - ⚠️ **代价**:D1 无 RLS,权限写在 Worker 代码 = **回到 AI 幻觉区** → backend-forge 对 CF 栈**强制 ownership 越权矩阵 + 负向测试加倍严**(数量 = 矩阵行数,且每条手写权限要过对抗验证)来补 RLS 的缺位。
+- **Firebase**:实时同步是核心(聊天/协作)且接受锁定 + 账单风险(必设预算告警)。
+- **PocketBase**:纯副业极简自托管。
+
+**选定写进 `backend-readiness.md`**,backend-forge Step 0 读它。
+
 ### FROZEN by default
 
 技术栈定稿后默认 FROZEN。变更 = 回 discover/lockdown 重评 + 回 shape 重算多端影响(PLATFORM-MATRIX 可能变)。参照决策生命周期 § FROZEN。

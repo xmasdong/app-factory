@@ -243,6 +243,17 @@ npx @stoplight/prism-cli@latest mock api/openapi.yaml --port 4010   # → http:/
 - admin 角色用 `auth.jwt() ->> 'role' = 'admin'` 判定,**不在应用层判越权**(应用层判 = 头号幻觉)。
 - 生成的 SQL 必须可 `supabase db reset` 重放。
 
+**栈分支(非 Supabase 时,codegen 路径 + 权限处理不同;选型见 `tech-stack-decision.md` 后端矩阵):**
+
+| 栈 | codegen 路径(真命令) | 越权防护 |
+|---|---|---|
+| **Supabase**(默认) | 上表 + `supabase/migrations/*.sql` RLS | 声明式 RLS(抗幻觉最佳) |
+| **Cloudflare**(AI 重/边缘/低成本) | Workers handler + `wrangler d1 migrations apply`(D1=SQLite)+ R2;AI 能力走 Workers AI / Vectorize / AI Gateway | ⚠️ **D1 无 RLS → 权限写 Worker 代码 = AI 幻觉区**。补偿:**ownership 矩阵 + 越权负向测试加倍严**——非 RLS 栈,越权负向用例数 **≥ 矩阵行数 × 2**(读+写+无 token 全覆盖),每条手写权限检查必过对抗验证 |
+| Firebase | Functions + Firestore security rules | rules(易错,需测,同 ≥2×) |
+| PocketBase / 自建 | 手写 handler / API rules | 应用层判,全压负向测试(≥2×) |
+
+> **通用铁律**:权限不能声明式(RLS)时,越权防护全靠 backend-forge 夹2 负向测试——所以非 Supabase 栈,Synthesis critic 对"越权用例数 vs 矩阵行数"对账按 **≥2×** 卡,补 RLS 缺位。
+
 遵循 `.claude/rules/core.md § 禁止模式`:codegen 产物不算"预建抽象"(它有真实消费者=各端 SDK);但**手写**为"将来可能"加的端点/字段算违规。
 
 ---
