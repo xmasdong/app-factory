@@ -609,6 +609,271 @@ sg_app_multiplatform_smoke() {
 }
 
 # ============================================================================
+# design-first 增强: 7 个新 sg_app_* 函数(初期全 advisory,经 sg_run_soft 调用)
+# ============================================================================
+
+# ============================================================================
+# design-first 增强: 7 个新 sg_app_* 函数 + sg_run_soft (如已有可跳过)
+# 风格: 无依赖项 → echo 缺失原因 return; 通过 → 静默 return
+# 路径常量: $ROOT 已在文件顶部定义
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# 1. sg_app_data_contract — SKILL.md 已声明但本文件未实现, 现补
+#    验: spec.md ## 数据契约 章节存在 + 含契约表 + 消费端 ≥2 + 端侧独有字段子章节
+# ----------------------------------------------------------------------------
+sg_app_data_contract() {
+  local file="$ROOT/docs/spec.md"
+  [[ ! -f "$file" ]] && { echo "spec.md 不存在"; return; }
+  _app_section_exists "数据契约" || _app_section_exists "DATA-CONTRACT" || { echo "spec.md 缺 ## 数据契约 章节"; return; }
+
+  local content
+  content=$(_app_section_content "数据契约" "$file")
+  [[ -z "$content" ]] && content=$(_app_section_content "DATA-CONTRACT" "$file")
+
+  # 契约表存在 (markdown 表格数据行 ≥1)
+  local rows
+  rows=$(echo "$content" | grep -E "^\|" | grep -vE "^\|[[:space:]-:|]+\|?[[:space:]]*$" 2>/dev/null | wc -l | tr -d ' ')
+  if (( rows < 2 )); then
+    echo "数据契约缺契约表 (字段/类型/来源 表格数据行 ${rows} < 2)"
+    return
+  fi
+
+  # 消费方含 ≥2 端 (从 ios/android/web/flutter/swiftui/compose/server 命中数)
+  local consumer_count
+  consumer_count=$(echo "$content" | grep -oiE "iOS|Android|Web|Flutter|SwiftUI|Compose|server|后端|前端" 2>/dev/null | sort -u | wc -l | tr -d ' ')
+  if (( consumer_count < 2 )); then
+    echo "数据契约消费方 < 2 端 (期望 ≥2 个端, 当前命中 ${consumer_count})"
+    return
+  fi
+
+  # 端侧独有字段子章节存在
+  if ! echo "$content" | grep -qiE "^### .*(独有|platform.?specific|端侧|specific)"; then
+    echo "数据契约缺 ### 端侧独有字段 子章节"
+    return
+  fi
+}
+
+# ----------------------------------------------------------------------------
+# 2. sg_app_openapi_artifact — api/openapi.yaml 存在 + OpenAPI 3.1 + 覆盖核心链路
+# ----------------------------------------------------------------------------
+sg_app_openapi_artifact() {
+  local oas="$ROOT/api/openapi.yaml"
+  [[ ! -f "$oas" ]] && oas="$ROOT/api/openapi.yml"
+  if [[ ! -f "$oas" ]]; then
+    echo "缺 api/openapi.yaml (backend-forge 后端 SSOT 未产出)"
+    return
+  fi
+
+  # OpenAPI 3.1 声明
+  if ! grep -qE "^openapi:[[:space:]]*[\"']?3\.1" "$oas" 2>/dev/null; then
+    echo "openapi.yaml 非 OpenAPI 3.1 (缺 openapi: 3.1.x 声明)"
+    return
+  fi
+
+  # 合法性: 有 jq/swagger-cli/redocly 则真校验, 否则结构兜底
+  if command -v redocly >/dev/null 2>&1; then
+    if ! redocly lint "$oas" >/dev/null 2>&1; then
+      echo "openapi.yaml redocly lint 失败 (非合法 OpenAPI 文档)"
+      return
+    fi
+  elif command -v swagger-cli >/dev/null 2>&1; then
+    if ! swagger-cli validate "$oas" >/dev/null 2>&1; then
+      echo "openapi.yaml swagger-cli validate 失败"
+      return
+    fi
+  else
+    # 兜底: 必须含 info: 和 paths:
+    if ! grep -qE "^info:" "$oas" || ! grep -qE "^paths:" "$oas"; then
+      echo "openapi.yaml 缺 info:/paths: 顶级键 (结构不合法)"
+      return
+    fi
+  fi
+
+  # 覆盖核心链路: paths 下 endpoint 数 ≥1
+  local ep_count
+  ep_count=$(grep -cE "^[[:space:]]{2}/[A-Za-z0-9{}/_-]+:" "$oas" 2>/dev/null) || ep_count=0
+  if (( ep_count < 1 )); then
+    echo "openapi.yaml paths 下无 endpoint (未覆盖核心链路)"
+    return
+  fi
+}
+
+# ----------------------------------------------------------------------------
+# 3. sg_app_design_baseline_exists — design-manifest.json + baseline PNG
+# ----------------------------------------------------------------------------
+sg_app_design_baseline_exists() {
+  local manifest="$ROOT/docs/design/design-manifest.json"
+  if [[ ! -f "$manifest" ]]; then
+    echo "缺 docs/design/design-manifest.json (design-restore 设计真相源未产出)"
+    return
+  fi
+
+  # manifest 合法 + 含 screens
+  if command -v jq >/dev/null 2>&1; then
+    if ! jq -e '.' "$manifest" >/dev/null 2>&1; then
+      echo "design-manifest.json 非合法 JSON"
+      return
+    fi
+    local screen_count
+    screen_count=$(jq -r '(.screens // []) | length' "$manifest" 2>/dev/null) || screen_count=0
+    if (( screen_count < 1 )); then
+      echo "design-manifest.json screens 为空 (无屏可还原)"
+      return
+    fi
+  else
+    if ! grep -qE '"screens"' "$manifest"; then
+      echo "design-manifest.json 缺 screens 字段"
+      return
+    fi
+  fi
+
+  # baseline PNG 存在 (docs/design/baseline/ 下 ≥1 张 png)
+  local png_count
+  png_count=$(find "$ROOT/docs/design/baseline" -type f -name "*.png" 2>/dev/null | wc -l | tr -d ' ')
+  if (( png_count < 1 )); then
+    echo "缺 baseline PNG (docs/design/baseline/<platform>/<viewport>/<screen>.png 下无图)"
+    return
+  fi
+}
+
+# ----------------------------------------------------------------------------
+# 4. sg_app_ui_visual_diff — 读 .claude/state/ui-diff.json
+#    mismatch ≤3 pass / 3-8 warn (echo 但 advisory) / >8 fail
+# ----------------------------------------------------------------------------
+sg_app_ui_visual_diff() {
+  local diff="$ROOT/.claude/state/ui-diff.json"
+  if [[ ! -f "$diff" ]]; then
+    echo "缺 .claude/state/ui-diff.json (截图视觉 diff 未跑)"
+    return
+  fi
+
+  local mismatch
+  if command -v jq >/dev/null 2>&1; then
+    mismatch=$(jq -r '.mismatch // .max_mismatch // empty' "$diff" 2>/dev/null)
+  else
+    mismatch=$(grep -oE '"mismatch"[[:space:]]*:[[:space:]]*[0-9]+' "$diff" 2>/dev/null | grep -oE '[0-9]+$' | head -1)
+  fi
+  if [[ -z "$mismatch" || ! "$mismatch" =~ ^[0-9]+$ ]]; then
+    echo "ui-diff.json 缺 mismatch 数值字段"
+    return
+  fi
+
+  if (( mismatch > 8 )); then
+    echo "视觉 diff mismatch=${mismatch} > 8 (FAIL, 与基线偏差过大)"
+    return
+  fi
+  if (( mismatch > 3 )); then
+    echo "视觉 diff mismatch=${mismatch} 落在 3-8 WARN 区 (建议复核, 确认非动态区误杀)"
+    return
+  fi
+  # ≤3 → PASS, 静默
+}
+
+# ----------------------------------------------------------------------------
+# 5. sg_app_design_token_match — 读 token 对账产物
+# ----------------------------------------------------------------------------
+sg_app_design_token_match() {
+  local rep="$ROOT/.claude/state/token-match.json"
+  if [[ ! -f "$rep" ]]; then
+    echo "缺 .claude/state/token-match.json (token 对账未跑)"
+    return
+  fi
+
+  if command -v jq >/dev/null 2>&1; then
+    local hardcoded mismatched
+    hardcoded=$(jq -r '.hardcoded_count // 0' "$rep" 2>/dev/null)
+    mismatched=$(jq -r '.mismatched_count // 0' "$rep" 2>/dev/null)
+    [[ "$hardcoded" =~ ^[0-9]+$ ]] || hardcoded=0
+    [[ "$mismatched" =~ ^[0-9]+$ ]] || mismatched=0
+    if (( hardcoded > 0 )); then
+      echo "token 对账: ${hardcoded} 处硬编码值 (实现处必须只引用 token, 禁硬编码)"
+      return
+    fi
+    if (( mismatched > 0 )); then
+      echo "token 对账: ${mismatched} 处 token 值与 manifest 不一致"
+      return
+    fi
+  else
+    if grep -qE '"hardcoded_count"[[:space:]]*:[[:space:]]*[1-9]' "$rep"; then
+      echo "token 对账含硬编码值 (实现处禁硬编码, 只引用 token)"
+      return
+    fi
+  fi
+}
+
+# ----------------------------------------------------------------------------
+# 6. sg_app_contract_test — 读 .claude/state/contract-test.json
+#    区分 target=mock|real
+# ----------------------------------------------------------------------------
+sg_app_contract_test() {
+  local ct="$ROOT/.claude/state/contract-test.json"
+  if [[ ! -f "$ct" ]]; then
+    echo "缺 .claude/state/contract-test.json (Schemathesis 契约测试未跑)"
+    return
+  fi
+
+  local target result
+  if command -v jq >/dev/null 2>&1; then
+    target=$(jq -r '.target // "unknown"' "$ct" 2>/dev/null)
+    result=$(jq -r '.result // ""' "$ct" 2>/dev/null)
+  else
+    target=$(grep -oE '"target"[[:space:]]*:[[:space:]]*"[^"]+"' "$ct" 2>/dev/null | sed -E 's/.*"([^"]+)"$/\1/')
+    result=$(grep -oE '"result"[[:space:]]*:[[:space:]]*"[^"]+"' "$ct" 2>/dev/null | sed -E 's/.*"([^"]+)"$/\1/')
+    [[ -z "$target" ]] && target="unknown"
+  fi
+
+  if [[ "$result" != "PASS" ]]; then
+    echo "契约测试 target=${target} result=${result:-空} (期望 PASS)"
+    return
+  fi
+  # target=mock → 前后端尚未对齐真后端, 仅 advisory 提示 (不当失败, 但点名)
+  if [[ "$target" == "mock" ]]; then
+    echo "契约测试仅跑在 mock (target=mock), real 后端尚未验证, 上线前需对 real 复跑"
+    return
+  fi
+  # target=real & PASS → 静默
+}
+
+# ----------------------------------------------------------------------------
+# 7. sg_app_e2e_contract_smoke — E2E 字段对照
+#    读 .claude/state/e2e-contract.json: 实际响应字段 vs openapi/manifest 声明
+# ----------------------------------------------------------------------------
+sg_app_e2e_contract_smoke() {
+  local e2e="$ROOT/.claude/state/e2e-contract.json"
+  if [[ ! -f "$e2e" ]]; then
+    echo "缺 .claude/state/e2e-contract.json (E2E 字段对照 smoke 未跑)"
+    return
+  fi
+
+  if command -v jq >/dev/null 2>&1; then
+    local result missing_fields extra_fields
+    result=$(jq -r '.result // ""' "$e2e" 2>/dev/null)
+    missing_fields=$(jq -r '(.missing_fields // []) | length' "$e2e" 2>/dev/null)
+    extra_fields=$(jq -r '(.extra_fields // []) | length' "$e2e" 2>/dev/null)
+    [[ "$missing_fields" =~ ^[0-9]+$ ]] || missing_fields=0
+    [[ "$extra_fields" =~ ^[0-9]+$ ]] || extra_fields=0
+    if (( missing_fields > 0 )); then
+      echo "E2E 字段对照: ${missing_fields} 个声明字段在实际响应缺失 (前后端 drift)"
+      return
+    fi
+    if (( extra_fields > 0 )); then
+      echo "E2E 字段对照: ${extra_fields} 个实际响应字段未在契约声明 (前后端 drift)"
+      return
+    fi
+    if [[ -n "$result" && "$result" != "PASS" ]]; then
+      echo "E2E 字段对照 result=${result} (期望 PASS)"
+      return
+    fi
+  else
+    if ! grep -qE '"result"[[:space:]]*:[[:space:]]*"PASS"' "$e2e"; then
+      echo "e2e-contract.json 未含 result: PASS"
+      return
+    fi
+  fi
+}
+
+# ============================================================================
 # Router: cmd_app_gate <discover|lockdown|shape|build|qa|ship|scaffold>
 # (anchor 保留为 legacy alias → 自动转 discover)
 # ============================================================================
@@ -672,6 +937,10 @@ cmd_app_gate() {
     shape)
       sg_run "$(sg_app_platform_matrix)" "多端能力矩阵 ≥8 行 + 无懒惰 fallback"
       sg_run "$(sg_app_task_platform_field)" "TASK PLATFORM 字段全填"
+      # design-first: 数据契约(补实)+ openapi(仅 design-first 项目),全 advisory
+      sg_run_soft "$(sg_app_data_contract)" "数据契约表 + 消费端 ≥2 + 端侧独有字段"
+      [[ -d "$ROOT/api" || -f "$ROOT/docs/design/design-manifest.json" ]] && \
+        sg_run_soft "$(sg_app_openapi_artifact)" "openapi.yaml 3.1 合法 + 覆盖核心链路 (design-first)"
       ;;
     build)
       sg_run "$(sg_app_bundle_coherence)" "bundle id 一致"
@@ -679,6 +948,12 @@ cmd_app_gate() {
     qa)
       sg_run "$(sg_app_reviewer_path)" "审核员路径产物"
       sg_run_soft "$(sg_app_multiplatform_smoke)" "多端 smoke"
+      # design-first: 保真 + 后端契约闸门,全 advisory(初期不阻塞)
+      sg_run_soft "$(sg_app_design_baseline_exists)" "设计基线 manifest + baseline PNG"
+      sg_run_soft "$(sg_app_ui_visual_diff)" "UI 视觉 diff (mismatch ≤3 pass)"
+      sg_run_soft "$(sg_app_design_token_match)" "design token 对账 (无硬编码/不一致)"
+      sg_run_soft "$(sg_app_contract_test)" "契约测试 PASS (mock/real)"
+      sg_run_soft "$(sg_app_e2e_contract_smoke)" "E2E 字段对照 (前后端无 drift)"
       ;;
     ship)
       sg_run "$(sg_app_aso_complete)" "ASO 字段 + 截图脚本"

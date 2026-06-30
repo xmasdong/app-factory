@@ -21,6 +21,7 @@ description: Unified entry / router for the App Factory app-dev pipeline. Reads 
 | 状态 | 派给 | 说明 |
 |---|---|---|
 | 无 status.md / 空目录 | `scaffold` → 然后 `discover` | 从头:初始化骨架 + 选品 |
+| `PROJECT_TYPE: design-first`(已有设计稿) | `scaffold` → `discover`(轻量旁路)→ shape 调 `design-restore`+`backend-forge` | 导入图/设计稿→高保真app+后端API,见 `ROADMAP-design-first.md` |
 | `PROJECT_TYPE` ≠ app | 提示走 generic 轨(setup/spec/impl/check/verify/release) | 非 app 项目 |
 | `CURRENT_GATE: A-GATE Discovery` | `discover`;若 `phase: awaiting-decision` → 提示用户看 mockup 回「推进/换方向/暂停」 | 2-touch 停点 |
 | `CURRENT_GATE: A-GATE Lockdown` | `lockdown` | 用户已回"推进" |

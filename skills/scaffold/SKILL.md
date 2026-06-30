@@ -5,6 +5,8 @@ description: "Scaffold a new app-track project — copy spec/status templates, i
 
 # /scaffold — 初始化 app 主线项目
 
+> 🎨 **design-first 入口**:Step1 入口判定加第三态——用户**已有完整设计稿**(.pen/Figma/截图目录)时,置 `PROJECT_TYPE=design-first`(**不新增 CURRENT_GATE 取值**),并建 `docs/design/` 与 `api/` 目录占位。后续:discover 轻量旁路、shape 调 design-restore + backend-forge。终极目标=导入图/设计稿→产出能上线生产的 app。
+
 **作用:** 把空目录或已有项目改造成可走 5 道 A-GATE 的 app 主线项目. 一次性脚手架, 跑完后由 /anchor 接手.
 
 **INPUT_CONTRACT:**

@@ -15,6 +15,9 @@
 **工具 skill**:
 `codex-image-bridge`(出图)· `app-store-review-survival`(过审)· `app-store-screenshots`(商店截图)· `ios-ship-cli`(fastlane 上传)· `frontend-design` + 20 动词簇(UI 设计/打磨)
 
+**design-first 引擎(导入图/设计稿 → app + 后端)**:
+`design-restore`(设计→高保真app,reify≠create)· `backend-forge`(功能/契约→完整后端API)。经 `docs/design/design-manifest.json` + `api/openapi.yaml` 两份 FROZEN 机读产物当桥,挂在 shape/build/qa 内(不进路由/不进 hook)。详见 `ROADMAP-design-first.md`。
+
 **可选前置(通用开发轨,非本仓必需)**:`setup → spec → impl → check → verify → release` 这类 generic 开发流水线;若使用,app 轨 `ship` 以 generic `release` 的 release-ready 为前置。本仓 app 轨自带闸门即可独立运行。
 
 ⚠️ **版本说明**:旧文档提到 `/anchor`(A-GATE 0),现已折进 `lockdown`。以实际 7 skill 为准。

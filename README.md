@@ -83,6 +83,7 @@ echo 'export AI_RULES_ROOT="'$(pwd)'/app-factory"' >> ~/.zshrc && source ~/.zshr
 - ✅ 脊柱 7 skill 已内置 `skills/`(scaffold/discover/lockdown/shape/build/qa/ship),去项目耦合、可移植
 - ✅ 工具 skill 已内置:app-store-review-survival / app-store-screenshots / codex-image-bridge / ios-ship-cli + frontend-design 簇(21)
 - ✅ 3 缺口已接:UI 簇 → shape/build/qa;ios-ship-cli → ship;app-store-screenshots → qa/ship
+- 🎨 **design-first**(导入图/设计稿 → 高保真 app + 完整后端 API):新增 `design-restore`(设计→高保真app)+ `backend-forge`(功能/契约→后端API)两 skill,经 manifest + openapi 两份机读产物当桥,接进 shape/build/qa(闸门 advisory)。详见 **`ROADMAP-design-first.md`**
 - ✅ 依赖(rules/templates/hooks/scripts)全内置,无硬编码路径,clone 即用
 - 📋 详细编排 + 机械闸门 + 仓库结构:**见 `ORCHESTRATION.md`**
 

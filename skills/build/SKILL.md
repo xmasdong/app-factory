@@ -5,6 +5,8 @@ description: "Build one task to passing tests with PLATFORM isolation, bundle id
 
 # /build — A-GATE 2 实现 (app 主线)
 
+> 🎨 **design-first**:UI 任务以 `docs/design/tokens.json` 为**硬基准**(只引用 token 禁硬编码值);Backend 通道挂 `backend-forge` codegen 产物;前端 mock **必须由 `api/openapi.yaml` 生成**(prism/msw)= 前后端同源不 drift。UI 还原走 `design-restore` 渲染+diff 段(reify≠create,别和 frontend-design 抢)。
+
 > 🔗 **App Factory 集成 — UI 与美术**:
 > - UI 类任务实现后调 UI 簇:`frontend-design`(界面质感)+ `polish`(对齐间距)/`animate`(动效)/`colorize`(配色)/`harden`(错误处理/i18n/文字溢出),把"能跑"升到"有设计感"。
 > - **美术/素材调 `codex-image-bridge`**:app 图标、应用内插画/图标/素材、效果图。⚠️图标约束:App Store 图标**无 alpha 通道**(RGB 不透明);watchOS 图标**不能深色/黑底**(需明亮彩色满底);各平台尺寸齐全。

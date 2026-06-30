@@ -5,6 +5,8 @@ description: "Shape product cognition into a complete spec.md — PRD challenge 
 
 # /shape — A-GATE 1 产品认知 (app 主线)
 
+> 🎨 **design-first 核心**:① Step1.0 调 `design-restore` 抽取段 → `docs/design/design-manifest.json` + `tokens.json` + baseline PNG(视觉方向改为"读 manifest 体检补缺")② Step1.8 数据契约用 `manifest.screens[].fields` 做种子 ③ 新增 Step1.85 调 `backend-forge` 契约段 → `api/openapi.yaml`(SSOT)+ 越权矩阵 ④ coverage 升维三维(屏×断点×state)。**两份机读产物(manifest + openapi)= 设计↔app↔后端唯一真相源,机制消灭前后端 drift**。闸门 `sg_app_data_contract` / `sg_app_openapi_artifact`(advisory)。
+
 > 🔗 **App Factory 集成**:本关「视觉方向」调 `frontend-design` skill 定**设计系统**(配色/排版/组件基调/避 AI 通用脸),写进 spec.md「视觉方向」章节,给 /build 当 UI 实现基准。
 
 **作用:** 把产品需求塑形成完整 spec.md. /anchor 锁了外部世界, /shape 锁产品内部 — 用户故事 / 故障想象力 / 任务清单 / 多端能力矩阵 / 数据契约. 这是 app 写代码前的最后一关.

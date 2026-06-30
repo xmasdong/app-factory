@@ -5,6 +5,8 @@ description: "Lock down all external anchors after user approval — technical s
 
 # /lockdown — Phase B 锚定 (2-touch workflow 的 TOUCH 2 之后, AUTONOMOUS)
 
+> 🎨 **design-first**:命名/经济/合规/后端**四项不豁免**;Step2.1 技术 spike 源从"mockup 关键交互"改为"design-manifest 关键交互 + 后端能力假设";`backend-readiness.md` 加一行**后端选型决策**(默认 Supabase + 声明式 RLS:把"越权"这个 AI 头号幻觉区变成可审计 SQL)。
+
 > 🔗 **App Factory 集成 — 技术栈定稿**:Step 2.1 技术 spike 同时**定稿技术栈决策**。读 discover 的初选;若标了 `待 spike 定` 或两候选接近,**spike 跑关键能力**对比后定;写满 `app/templates/sections/tech-stack-decision.md`(决策 + 反方 + FROZEN)。合规扫描调 `app-store-review-survival`。
 
 **作用:** 用户在 /discover Step 0.8 回 "推进" → hook 写 AUTONOMOUS=true → 本 skill 自动跑 5 子节真验证 → 通过后自动续接 /shape。
