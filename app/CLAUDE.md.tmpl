@@ -1,0 +1,125 @@
+# ${PROJECT_NAME}
+
+> app 主线项目. 2-touch workflow: TOUCH 1 (输入"做 X") → AI 跑 discover → mockup → TOUCH 2 (推进) → AI autonomous 跑到 ship.
+
+## 继承自 generic 规则
+
+本项目走 **app 主线** (PROJECT_TYPE: app), 不是 generic 流程。
+
+继承自 generic 的思想 (照搬, 不重写):
+- 门禁驱动 / 信息充分才推进
+- 三类自检 (已知 / 可查 / 不可知)
+- 任务链自动续接
+- 熔断器 (3 次失败软熔断, 5 次硬熔断)
+- 决策生命周期 (optimistic / confirmed / deferred / invalidated / fused)
+- 冻结边界 (FROZEN by default)
+- 项目阶段 (building / stabilizing / live)
+- AUTONOMOUS 模式 (无人值守任务链)
+
+详细规则: `.claude/rules/core.md` (app 主线特化) + `.claude/rules/generic-core.md` (通用兜底)。
+
+## 6 个 A-GATE (按顺序)
+
+| Gate | 入口 skill | 何时跑 | 用户介入 |
+|------|-----------|--------|---------|
+| **A-GATE Discovery** | `/discover` | TOUCH 1 后 | **Step 0.8 hard stop**, 等用户看 mockup 决策 |
+| **A-GATE Lockdown** | `/lockdown` | TOUCH 2 用户"推进"后 | autonomous, 不介入 (除非熔断/合规阻塞) |
+| A-GATE Shape | `/shape` | Lockdown 通过后自动续 | autonomous |
+| A-GATE Build | `/build` | Shape 通过后自动续 | autonomous |
+| A-GATE QA | `/qa` | Build 通过后自动续 | autonomous |
+| A-GATE Ship | `/ship` | QA 通过后自动续 | autonomous |
+
+初始化: `/scaffold` (一次性脚手架)。统一入口可用 `/app-factory` (读 status 自动派关)。
+
+> ⚙️ **执行模型**:重活各关由 AI 用 Claude 内置 **Workflow 工具**编排(推荐用户开 ultracode 模式);编排蓝图参考见 app-factory `scripts/workflows/<关>.workflow.js`。Workflow 是 Claude/ultracode 内置工具,非本项目定义;无 `claude workflow` shell 命令;未开 ultracode 时降级单 agent。
+
+## 2-touch workflow
+
+```
+TOUCH 1: 用户输入 "做 X (例: 记账 app)"
+  ↓
+AI 跑 /discover:
+  - Step 0: 产品定位 5 字段 (AI 给 3-5 备选, 用户选;有 PRD 时从 PRD 读)
+  - Step 0.5: 市场调研 (一手数据: 商店榜单/差评/多源/死亡案例/反方)
+  - Step 0.7: 概念视觉 (mockup ≥1 张 + 3 屏用户动线)
+  - Step 0.8: 写 docs/discovery-summary.md, hard stop
+  - AI 收尾: "等你: 看 mockup 决策 推进/换方向/暂停"
+
+TOUCH 2: 用户回 "推进" (或换方向/暂停)
+  ↓
+pre-prompt-resume-detect.sh hook 自动检测信号:
+  - "推进" → 写 AUTONOMOUS=true + CURRENT_GATE=A-GATE Lockdown
+  - "换方向" → mockup 进 discarded-concepts, 回 Step 0
+  - "暂停" → 不动
+
+(AUTONOMOUS=true 后, AI 全自动:)
+  ↓ /lockdown (spike+经济+命名+后端+合规) → /shape (PRD挑战+多端矩阵+任务) → /build → /qa → /ship → 最终产物
+```
+
+## design-first 入口(已有设计稿时)
+
+有完整设计稿(.pen/Figma/截图)时:scaffold 置 `PROJECT_TYPE=design-first`,discover 轻量旁路,shape 调 `design-restore`(设计→高保真前端)+ `backend-forge`(功能→后端 API)。详见 app-factory `ROADMAP-design-first.md`。
+
+## PROJECT_TYPE 必须声明
+
+`docs/status.md` **顶部** 必须有:
+
+```
+PROJECT_TYPE: app                  # 或 design-first(已有设计稿)
+PROJECT_PHASE: building            # building / stabilizing / live
+CURRENT_GATE: A-GATE Discovery     # AI 沿门禁链推进时自动更新
+AUTONOMOUS: false                  # discover 阶段 false; 用户"推进"后 hook 自动改 true
+```
+
+`PROJECT_TYPE: app` 触发:
+- `.claude/rules/core.md` 替代 generic core.md 作为门禁定义
+- `.claude/scripts/app-gate.sh` 接管 skill-gate 验收
+- `pre-anchor-check.sh` / `pre-commit-bundle-coherence.sh` / `stop-app-audit.sh` / `pre-prompt-resume-detect.sh` 等 app 专属 hook 生效
+
+## 必读: 命名错位 = 灾难
+
+app 主线最常见的灾难: bundle id / 域名 / App Store 名 / IAP product id 不一致。
+
+真实案例 (某宠物 AI 修图 app):
+- 域名 petsnap.app 已注册
+- App Store 重名 → 副标题 hack "PetSnap: Pet AI Art"
+- bundle id `com.x.petsnap` 已锁;IAP id 跟着锁
+- 仓库内部目录改了新名但代码全是 petsnap
+- = **5 处错位, 上线后不可逆**
+
+防范:
+- `/lockdown` Step 2.3 强制 AI **先推荐 ≥5 候选 → 5 API 查重 (App Store / Play / 域名 / npm / GitHub) → 把"全干净" 候选给用户选**
+- `pre-commit-bundle-coherence.sh` hook 在 commit 时校验跨文件 bundle id 一致
+
+## 触发规则 (场景 → 应该做什么)
+
+| 用户说... | AI 应该 |
+|----------|--------|
+| "做个 app" / "做个 X 应用" | 启动 /discover, **不直接进 /shape** |
+| 用户描述模糊 ("做个东西") | 反问让用户具体到 ≥1 句话, 不接受"你定吧" |
+| 在 mockup 之前问 spike / 经济 / 命名 | 提示"那是 /lockdown 阶段, 先看 /discover 出 mockup" |
+| "改商店名 / 改 bundle id / 改价格" (已 locked 后) | **拒绝**, 回 /lockdown 重新锁定, 不在 /build 吸收 |
+| "推进" / "go" / "继续" (discover 后) | hook 自动写 AUTONOMOUS=true, AI 立即进 /lockdown |
+| "换方向" | hook 把 mockup 存进 discarded-concepts, AI 回 /discover Step 0 |
+| autonomous 中遇真硬阻塞 (合规拒因 / 不可逆) | 收尾 "等你: <具体阻塞>", 等用户决定 |
+
+## 输出模板
+
+继承 generic 的 TASK-TEMPLATE / DONE-TEMPLATE。app 任务追加 `PLATFORM:` 字段 (iOS / Android / Backend / Web / 鸿蒙 / 小程序 / All)。
+
+## 硬规则补丁 (在 generic 硬规则之上)
+
+- **NEVER bundle id 锁定后变更** (一旦上架就是新 App)
+- **NEVER 价格阶梯非单调** (年/月/周均价必须递减)
+- **NEVER 命名 status: locked 但 evidence 文件不存在/含"待跑"**
+- **NEVER 在 /discover 期间跑 spike / 经济 / 命名 (那是 /lockdown 的活)**
+- **NEVER 在 mockup 之前给"推进建议"** (决定权完全归用户)
+- **MUST autonomous 后任务链不询问用户, 除非真硬阻塞**
+- **MUST commit 自动授权** (继承 generic): app-gate.sh PASS + scope 在 FILES 内 → 直接 commit
+
+## 结束标记 (合规)
+
+每条 assistant 回复最后一行必须是:
+- `完成: <一句话交付>` — 已完成, 无待办
+- `等你: <具体等谁做什么>` — 真硬阻塞等人
+- `停住: <一句话处置意图>` — 响应 hook 阻塞

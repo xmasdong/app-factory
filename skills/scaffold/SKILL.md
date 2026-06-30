@@ -69,12 +69,13 @@ description: "Scaffold a new app-track project — copy spec/status templates, i
 ## Step 3: 复制模板到项目
 
 ```bash
-# 假设 PROJECT_ROOT = 目标项目根, AI_RULES_ROOT = ai-rules 仓库根
+# 假设 PROJECT_ROOT = 目标项目根, AI_RULES_ROOT = app-factory 仓库根(clone 路径,export AI_RULES_ROOT 指它)
 
 mkdir -p "$PROJECT_ROOT/docs"
 mkdir -p "$PROJECT_ROOT/.claude/hooks"
 mkdir -p "$PROJECT_ROOT/.claude/state/evidence"
 mkdir -p "$PROJECT_ROOT/.claude/rules"
+mkdir -p "$PROJECT_ROOT/.claude/scripts"
 
 # spec 骨架 (含 5 个 A-GATE 0 占位章节)
 cp "$AI_RULES_ROOT/app/templates/spec.md.tmpl" "$PROJECT_ROOT/docs/spec.md"
@@ -85,8 +86,18 @@ cp "$AI_RULES_ROOT/app/templates/status.md.tmpl" "$PROJECT_ROOT/docs/status.md"
 # CLAUDE.md (项目主入口)
 cp "$AI_RULES_ROOT/app/CLAUDE.md.tmpl" "$PROJECT_ROOT/CLAUDE.md"
 
-# app 门禁规则
+# app 门禁规则 (core + generic 兜底, CLAUDE.md 都引用)
 cp "$AI_RULES_ROOT/app/rules/core.md" "$PROJECT_ROOT/.claude/rules/core.md"
+cp "$AI_RULES_ROOT/app/rules/generic-core.md" "$PROJECT_ROOT/.claude/rules/generic-core.md"
+
+# ⭐ app-gate.sh 机械验收脚本 —— 必拷:hooks 在 $ROOT/.claude/scripts/app-gate.sh 找它,不拷=闸门全跑不了
+cp "$AI_RULES_ROOT/scripts/app-gate.sh" "$PROJECT_ROOT/.claude/scripts/app-gate.sh"
+chmod +x "$PROJECT_ROOT/.claude/scripts/app-gate.sh"
+
+# (可选) design-first 确定性脚本 —— 走 design-first 时才需要
+if [[ -d "$AI_RULES_ROOT/scripts/design-first" ]]; then
+  cp -R "$AI_RULES_ROOT/scripts/design-first" "$PROJECT_ROOT/.claude/scripts/design-first"
+fi
 ```
 
 **模板占位符必须由 AI 主动填:**
@@ -100,16 +111,10 @@ cp "$AI_RULES_ROOT/app/rules/core.md" "$PROJECT_ROOT/.claude/rules/core.md"
 ## Step 4: 复制 app 专属 hook
 
 ```bash
+# app-factory 把所有 hook 统一放在 app/hooks/(含 _lib.sh + pre-commit-scope + post-commit-next-task
+# + stop-politeness-guard + stop-skill-gate + stop-app-audit + pre-compact-dump + pre-anchor-check
+# + pre-prompt-resume-detect + pre-edit-design-remind 等)。一条 cp 全拷。
 cp "$AI_RULES_ROOT/app/hooks/"*.sh "$PROJECT_ROOT/.claude/hooks/"
-
-# 基础设施 hook (与 generic 共用)
-cp "$AI_RULES_ROOT/.claude/hooks/_lib.sh" "$PROJECT_ROOT/.claude/hooks/"
-cp "$AI_RULES_ROOT/.claude/hooks/pre-commit-scope.sh" "$PROJECT_ROOT/.claude/hooks/"
-cp "$AI_RULES_ROOT/.claude/hooks/post-commit-next-task.sh" "$PROJECT_ROOT/.claude/hooks/"
-cp "$AI_RULES_ROOT/.claude/hooks/stop-politeness-guard.sh" "$PROJECT_ROOT/.claude/hooks/"
-cp "$AI_RULES_ROOT/.claude/hooks/stop-skill-gate.sh" "$PROJECT_ROOT/.claude/hooks/"
-cp "$AI_RULES_ROOT/.claude/hooks/pre-compact-dump.sh" "$PROJECT_ROOT/.claude/hooks/"
-
 chmod +x "$PROJECT_ROOT/.claude/hooks/"*.sh
 ```
 
