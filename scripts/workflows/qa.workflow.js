@@ -1,10 +1,13 @@
-// qa (A-GATE 3 验收关).workflow.js — A-GATE 3 验收关 多 agent 编排
+// qa (A-GATE 3 验收关).workflow.js — 编排【蓝图参考】:A-GATE 3 验收关 推荐的多 agent 扇出结构
 //
-// 怎么跑(关键·别误会):
-//   主执行路径 = AI(Claude)在会话内调用【Workflow 工具】(Claude Code 内置·不是 shell),
-//   传 script = 本文件内容(Read 后传入)。**不存在 `claude workflow` 这种命令行。**
-//   推荐用户先开 ultracode 模式(让 AI 默认倾向用 Workflow 工具编排);
-//   未开 ultracode / 不便编排时,走 SKILL.md 顶部的「单 agent 顺序降级」路径(逻辑等价,慢但不丢覆盖)。
+// 本文件性质(关键·别误会):
+//   它是【蓝图参考】,展示该关推荐的多 agent 扇出结构(扇出哪些子任务、parallel/pipeline、对抗验证什么、
+//   loop 到什么条件、各 agent 干啥、产物落哪),不是本项目的可执行脚本。
+//   真执行时:用户手动开 ultracode 模式,AI(Claude)用 Claude 内置的【Workflow 工具】参考本蓝图
+//   当场组合编排(script 由 AI 现场写,非加载本文件运行)。
+//   ⚠️ Workflow 工具归 Claude/ultracode,非本项目定义;本项目不拥有 workflow 运行时,也没有 `claude workflow` 这种命令。
+//   ⚠️ ultracode 是用户手动开的会话高级模式;未开 ultracode / 不便编排时,
+//      走 SKILL.md 顶部的「单 agent 顺序降级」路径(逻辑等价,慢但不丢覆盖)。
 //   在目标业务项目根执行,确保 CLAUDE_PROJECT_DIR 指向它。
 //
 // 四质量模式归位(本关灵魂在 phase3 对抗验):
@@ -13,7 +16,7 @@
 //   adversarial verify = phase3 每条 reviewer claim 起 N 个 skeptic 独立质疑(不看彼此),多数过才 safe
 //   completeness critic= phase5 单 agent 核完整性 + 用确定性脚本写闸门 state(唯一可信产出口,严禁手写 key)
 //
-// Workflow runtime 全局:phase(title) / parallel(fns[]) / pipeline(items,...stages)
+// 蓝图里用到的编排原语(由 Claude 内置 Workflow 工具提供,非本项目定义):phase(title) / parallel(fns[]) / pipeline(items,...stages)
 //                        / agent(prompt,{label,phase,schema}) / log()
 //   顶层 await 可用。每个并行 worker 必须 .catch 兜底成合法 fallback,否则一崩全崩(保守判 fail/unsafe)。
 //

@@ -11,9 +11,9 @@ description: "功能/契约 → 完整后端 API 服务。从 shape 数据契约
 > - **闸门初期全 advisory**(`sg_run_soft`,不阻塞),与"建议优先"哲学一致。
 
 > ⚠️ **真 app 跑法(读到这里先看这条)**:为真实 app 跑 backend-forge **不走下面的线性 Step**,而是
-> `# AI 调用 Workflow 工具(Claude Code 内置·非 shell CLI),script 取以下文件内容: /Users/xmasdong/opc/app-factory/scripts/design-first/backend-forge.workflow.js`
-> 即由 AI 调用 Workflow 工具做**多 agent 编排**(ultracode 模式下 AI 默认倾向用它):openapi 先定稿当 SSOT → **按 endpoint 扇出**(每 endpoint:生成实现 → 契约测试 → 越权负向,pipeline 串)→ **业务规则对抗验证**(N skeptic 各自质疑,多数过才留)→ completeness critic 汇总写闸门 JSON。
-> **线性 Step 1..7 仅作单 agent 降级档**(没装 Workflow runtime 时手跑)。详见 [## 主执行路径:AI 调用 Workflow 工具编排(推荐用户开 ultracode;降级=单 agent 顺序)](#主执行路径ai-调用-workflow-工具编排推荐用户开-ultracode降级单-agent-顺序)。
+> `# 真 app 跑:你(AI)用内置 Workflow 工具按 skill 编排意图当场组合 script 执行;扇出结构参考蓝图 /Users/xmasdong/opc/app-factory/scripts/design-first/backend-forge.workflow.js(仅参考蓝图)`
+> 即由 AI 用内置 Workflow 工具做**多 agent 编排**(ultracode 模式下 AI 默认倾向用它):openapi 先定稿当 SSOT → **按 endpoint 扇出**(每 endpoint:生成实现 → 契约测试 → 越权负向,pipeline 串)→ **业务规则对抗验证**(N skeptic 各自质疑,多数过才留)→ completeness critic 汇总写闸门 JSON。
+> **线性 Step 1..7 仅作单 agent 降级档**(会话未开 ultracode、AI 未用 Workflow 工具编排时手跑)。详见 [## 主执行路径:AI 调用 Workflow 工具编排(推荐用户开 ultracode;降级=单 agent 顺序)](#主执行路径ai-调用-workflow-工具编排推荐用户开-ultracode降级单-agent-顺序)。
 
 **作用:** 把"功能 + 数据契约"塑形成**能上线生产的后端 API 服务**。职责见契约:① 从 screen 派生 entity 再派生 endpoint(草稿,inferred 字段需人确认)→ openapi.yaml **先定稿当 SSOT**;② 强制 **ownership 越权矩阵**(谁能 CRUD 谁的数据);③ codegen 可靠区(Supabase migration + RLS / DTO / 校验 / SDK / 测试骨架);④ 三重夹测试(Schemathesis property-based 契约 + 越权负向 + 业务规则走 ACCEPT)。
 
@@ -219,7 +219,7 @@ npx @stoplight/prism-cli@latest mock api/openapi.yaml --port 4010   # → http:/
 - 每个写端点必须显式声明 `403`(越权)和 `422`(校验失败)response。
 - `x-frozen: true` + 顶部注释"变更回 /shape 重算数据契约,不在 build 改"。
 - OpenAPI 3.1 用 JSON Schema 2020-12,`nullable` 统一一种写法(`type: [string, "null"]` 或保留兼容,二选一)。
-- **此文件落盘 = SSOT FROZEN**。Workflow 的 endpoint 扇出从这里解析 path,扇出中**不许改它**。
+- **此文件落盘 = SSOT FROZEN**。Workflow 工具编排的 endpoint 扇出从这里解析 path,扇出中**不许改它**。
 
 由 `sg_app_openapi_artifact` 验收(文件存在 + 3.1 合法 + 每写端点含 403/422 + 高风险字段含 format/enum)。
 
@@ -321,7 +321,7 @@ echo "{\"skill\":\"backend-forge\",\"epoch\":$(date +%s)}" > .claude/state/skill
 
 ## 主执行路径:AI 调用 Workflow 工具编排(推荐用户开 ultracode;降级=单 agent 顺序)
 
-> ⚠️ **主路径到底怎么操作**:**Workflow 是 Claude Code 会话内的【工具】,由 AI(你)调用**(给它传 `script` 参数)——**不存在 `claude workflow` 这种 shell 命令**。**ultracode 是用户手动开的会话高级模式**(让 AI 默认倾向调 Workflow),skill/脚本无法自己开启它,只能推荐用户开。所以"执行本 skill 主路径"=你调用 **Workflow 工具**,`script` = `scripts/design-first/backend-forge.workflow.js` 的内容(先 Read 它再传)。脚本里的 agent 用 **Bash 调本仓 `scripts/design-first/` 的确定性脚本**(`contract-test.sh` / `e2e-contract.sh` / `ownership-probe.sh`)产出闸门读取的 state JSON——这些脚本是唯一可信的 state 产出口,不要让 agent 手写 JSON。
+> ⚠️ **主路径到底怎么操作**:**Workflow 是 Claude Code 会话内的【工具】,由 AI(你)调用**(给它传 `script` 参数)——**不存在 `claude workflow` 这种 shell 命令**。**ultracode 是用户手动开的会话高级模式**(让 AI 默认倾向调 Workflow),skill/脚本无法自己开启它,只能推荐用户开。所以"执行本 skill 主路径"=你(AI)用内置 Workflow 工具,按本 skill 描述的编排意图当场组合 script 并执行;`scripts/design-first/backend-forge.workflow.js` 只是推荐扇出结构的【参考蓝图】,可读来参考,不是传给工具去跑的脚本。你现场组合的 script 里的 agent 用 **Bash 调本仓 `scripts/design-first/` 的确定性脚本**(`contract-test.sh` / `e2e-contract.sh` / `ownership-probe.sh`)产出闸门读取的 state JSON——这些脚本是唯一可信的 state 产出口,不要让 agent 手写 JSON。
 
 **真 app 跑 backend-forge 的主路径 = AI 调用 Workflow 工具编排,不是单 agent 顺序硬写(单 agent 仅降级档)。** 单 agent 顺序写时,几十个 endpoint 的"生成实现→契约→越权"和每条业务规则的对抗验证会被压成一条线、互相污染上下文、且没有"覆盖核对"这一环——漏一个 endpoint 没越权测试也发现不了。Workflow 把它拆成**四个 phase**,把 Workflow 四编排模式归位:
 
@@ -337,16 +337,16 @@ echo "{\"skill\":\"backend-forge\",\"epoch\":$(date +%s)}" > .claude/state/skill
 ```bash
 mkdir -p /Users/xmasdong/opc/app-factory/scripts/design-first
 # 在目标业务项目根跑,CLAUDE_PROJECT_DIR 指向该项目(否则 ROOT 落到 cwd,state 写错位置闸门读不到):
-# AI 调用 Workflow 工具(Claude Code 内置·非 shell CLI),script 取以下文件内容: /Users/xmasdong/opc/app-factory/scripts/design-first/backend-forge.workflow.js
+# 真 app 跑:你(AI)用内置 Workflow 工具,按本 skill 描述的编排意图当场组合 script 并执行;扇出结构可参考蓝图 /Users/xmasdong/opc/app-factory/scripts/design-first/backend-forge.workflow.js(仅参考,非传给工具运行的脚本)
 # 跑完用闸门验收 key 对齐:
 bash /Users/xmasdong/opc/app-factory/scripts/app-gate.sh build
 jq '.target, .result, (.failures|length)' .claude/state/contract-test.json
 jq '.result, (.missing_fields|length), (.extra_fields|length)' .claude/state/e2e-contract.json
 ```
 
-### Workflow 脚本模板(写死,落 `scripts/design-first/backend-forge.workflow.js`)
+### 编排蓝图参考(落 `scripts/design-first/backend-forge.workflow.js` 当扇出结构示例,供 AI/人参考;非传给 Workflow 工具运行的脚本)
 
-> Workflow runtime 提供的全局:`phase(title)`、`parallel(fns[])`、`agent(prompt, {label, phase, schema})`(schema 是 JSON Schema,agent 必须按 schema 返回结构化对象)。脚本体是顶层 await。`pipeline` 用 `for await` / 顺序 `await` 串 agent 实现。**每个 parallel worker 必须 `.catch` 兜底成符合 schema 的 fallback 对象**,否则一个 endpoint 崩了整个 parallel reject、其它已完成的工作全丢。
+> 内置 Workflow 工具组合 script 时可用的全局(Claude 提供):`phase(title)`、`parallel(fns[])`、`agent(prompt, {label, phase, schema})`(schema 是 JSON Schema,agent 必须按 schema 返回结构化对象)。脚本体是顶层 await。`pipeline` 用 `for await` / 顺序 `await` 串 agent 实现。**每个 parallel worker 必须 `.catch` 兜底成符合 schema 的 fallback 对象**,否则一个 endpoint 崩了整个 parallel reject、其它已完成的工作全丢。
 
 ```js
 export const meta = {
@@ -428,7 +428,7 @@ return { ssot, perEndpoint, ruleVerdicts, synth }
 - **越权用例数 = ownership 矩阵行数**:critic 必须核这个数;A 取 B 资源期望严格 `403`(不是 200 空、不是 404、不是 500),越权写还要读回验证 B 数据未变。
 - **每个 worker `.catch` 兜底**成符合 schema 的 fallback,否则一个 endpoint 崩整个 parallel reject。
 - **schemathesis target 别谎报**:对 prism mock 跑填 `mock`,只有对真后端跑过才填 `real`。
-- **CLAUDE_PROJECT_DIR 必须 export** 指向目标项目根,否则 state 写到 cwd 闸门读不到。脚本随 app-factory 仓库分发,但**跑时在各业务项目根跑**。
+- **CLAUDE_PROJECT_DIR 必须 export** 指向目标项目根,否则 state 写到 cwd 闸门读不到。该蓝图随 app-factory 仓库分发(当参考),但你(AI)现场组合的 script **跑时在各业务项目根执行**。
 
 ---
 

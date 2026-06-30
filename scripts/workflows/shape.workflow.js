@@ -1,6 +1,8 @@
-// shape (A-GATE 1 产品认知).workflow.js — ultracode Workflow 编排:产品需求 → 完整 spec.md + A-GATE 1 闸门
-// 怎么跑:AI 调用 Workflow 工具(Claude Code 内置·非 shell CLI),script = 本文件内容(Read 后传入)。
-//   ⚠️ 不存在 `claude workflow` shell 命令。ultracode 只是让 AI 默认倾向用 Workflow 工具编排。
+// shape (A-GATE 1 产品认知).workflow.js — 编排【蓝图参考】:产品需求 → 完整 spec.md + A-GATE 1 闸门 推荐的多 agent 扇出结构
+// 本文件性质:它是【蓝图参考】,展示该关推荐的多 agent 扇出结构(扇出哪些子任务、parallel/pipeline、对抗验证什么、loop 到什么条件、各 agent 干啥、产物落哪),不是本项目的可执行脚本。
+// 真执行时:用户手动开 ultracode 模式,AI(Claude)用 Claude 内置的【Workflow 工具】参考本蓝图当场组合编排(script 由 AI 现场写,非加载本文件运行)。
+//   ⚠️ Workflow 工具归 Claude/ultracode,非本项目定义;本项目不拥有 workflow 运行时,也没有 `claude workflow` 这种命令。
+//   ⚠️ ultracode 是用户手动开的会话高级模式;开了之后 AI 才默认倾向用 Workflow 工具编排。
 //   在目标业务项目根执行,确保 CLAUDE_PROJECT_DIR 指向它。
 // 产物(随项目根):docs/spec.md(完整 A-GATE 1)+ docs/status.md(CURRENT_GATE: A-GATE 2)
 //                 .claude/state/clearance-shape.json + skill-signal.json(闸门读;由确定性脚本写)
@@ -16,7 +18,7 @@
 //   不新增 key、不改 app-gate.sh)。与 design-restore.workflow.js 第 82-88 行同一契约:
 //   agent 产料 → Bash 跑确定性脚本产 state。
 //
-// Workflow runtime 全局:phase(title) / parallel(fns[]) / agent(prompt,{label,phase,schema}) / log()
+// 蓝图里用到的编排原语(由 Claude 内置 Workflow 工具提供,非本项目定义):phase(title) / parallel(fns[]) / agent(prompt,{label,phase,schema}) / log()
 // 每个 agent 返回须符合 schema;每个并行 worker 必须 .catch 兜底成合法 fallback,否则一崩全崩。
 
 export const meta = {

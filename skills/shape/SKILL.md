@@ -28,11 +28,11 @@ description: "Shape product cognition into a complete spec.md — PRD challenge 
 
 ---
 
-## 主执行路径 (AI 调 Workflow 工具编排)
+## 编排意图 (开 ultracode 后, AI 用内置 Workflow 工具现场组合)
 
-**本 skill 主执行路径 = AI 调用 Workflow 工具** (Claude Code 内置工具, 非 shell; 不存在 `claude workflow` 命令), `script = scripts/workflows/shape.workflow.js` (Read 后传入)。**推荐 ultracode 模式** (用户手动开启的会话高级模式 — skill/脚本无法自己开它; ultracode 只让 AI 默认倾向用 Workflow 工具做多 agent 编排)。
+**编排建议: 推荐用户手动开启 ultracode 会话高级模式** (skill/脚本无法自己开它)。开了之后, AI(Claude)用内置 Workflow 工具——这是 Claude Code 的内置工具, 不是 shell, 也不存在 `claude workflow` 命令——按本 skill 描述的编排意图当场组合 script 并执行(script 由 AI 现场写, 不从本仓任何文件加载来运行)。本仓 `scripts/workflows/shape.workflow.js` 仅作【编排蓝图参考/示例】, 展示推荐的扇出结构, 供 AI 或人参考, 不是『传给 Workflow 工具去跑的可执行脚本』, 本项目也不拥有任何 workflow 运行时。
 
-该 .workflow.js 是 fan-out-then-converge 编排 (两次扇出 + completeness critic 收敛):
+该 .workflow.js 蓝图参考展示的是 fan-out-then-converge 编排形状 (两次扇出 + completeness critic 收敛), AI 现场组合 script 时可照此结构 (非加载该文件运行):
 
 ```
 Precheck   (串行) — 校验 INPUT_CONTRACT + 读 lessons.md, 不满足 throw 终止

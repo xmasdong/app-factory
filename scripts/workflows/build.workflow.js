@@ -1,8 +1,9 @@
-// build.workflow.js — ultracode Workflow 编排:status.md 未完成 TASK → 实现+测试通过+commit(A-GATE 2)
-// 怎么跑:AI 调用 Workflow 工具(Claude Code 内置·非 shell CLI),script = 本文件内容(Read 后传入)。
-//   不存在 `claude workflow` 命令。在目标业务项目根执行,确保 CLAUDE_PROJECT_DIR 指向它。
-//   skill 无法自己开 ultracode(那是用户手动开的会话高级模式);本文件只是 AI 用 Workflow 工具时的编排脚本。
-//   推荐用户开 ultracode 模式(AI 默认倾向调 Workflow);未开/不便编排时走 SKILL.md 单 agent 降级路径。
+// build.workflow.js — 编排【蓝图参考】:status.md 未完成 TASK → 实现+测试通过+commit(A-GATE 2)推荐的多 agent 扇出结构
+// 本文件性质:它是【蓝图参考】,展示该关推荐的多 agent 扇出结构(扇出哪些子任务、parallel/pipeline、对抗验证什么、loop 到什么条件、各 agent 干啥、产物落哪),不是本项目的可执行脚本。
+// 真执行时:用户手动开 ultracode 模式,AI(Claude)用 Claude 内置的【Workflow 工具】参考本蓝图当场组合编排(script 由 AI 现场写,非加载本文件运行)。
+//   ⚠️ Workflow 工具归 Claude/ultracode,非本项目定义;本项目不拥有 workflow 运行时,也没有 `claude workflow` 这种命令。
+//   ⚠️ ultracode 是用户手动开的会话高级模式;skill 无法自己开它。开了之后 AI 才默认倾向用 Workflow 工具编排;未开/不便编排时走 SKILL.md 单 agent 降级路径。
+//   在目标业务项目根执行,确保 CLAUDE_PROJECT_DIR 指向它。
 //
 // 产物(随项目根):生产代码 + 测试 + docs/status.md 任务 [x] + git commit + .claude/state/skill-signal.json
 //                 闸门 state 由 scripts/ 下既有确定性 .sh 产出(勿改其 key)。
@@ -13,7 +14,7 @@
 //   loop-until-converge  = Phase 2 单 agent for 循环:跑测试 → fail 数单调降才继续,3 轮熔断(同 design-restore 判据)
 //   adversarial verify   = Phase 3 parallel(critic-1 diff 挑刺 ‖ critic-2 stub/mock 审),独立于实现者,有 P0 有限回灌
 //
-// Workflow runtime 全局:phase(title) / parallel(fns[]) / pipeline(items, ...stages) / agent(prompt,{label,phase,schema}) / log()
+// 蓝图里用到的编排原语(由 Claude 内置 Workflow 工具提供,非本项目定义):phase(title) / parallel(fns[]) / pipeline(items, ...stages) / agent(prompt,{label,phase,schema}) / log()
 // 每个 agent 返回须符合 schema;每个并行 worker 必须 .catch 兜底成合法 fallback,否则一崩全崩。
 // 唯一写 state 的点 = Phase 3 末尾让 agent 用 Bash 调既有 .sh 产 JSON(agent 不直接写 state key,与 design-restore Synthesis 同构)。
 

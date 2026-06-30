@@ -5,11 +5,11 @@ description: "Quality-assure the app before store submission — multi-platform 
 
 # /qa — A-GATE 3 验收 (app 主线)
 
-> ⚙️ **主执行路径 = AI 调用 Workflow 工具**(script = `scripts/workflows/qa.workflow.js`)。
+> ⚙️ **推荐执行形态 = AI 用内置 Workflow 工具按本 skill 描述的编排意图现场组合并执行**(现场组合的 script 由 AI 即时编写,不是从本仓加载某文件来跑)。`scripts/workflows/qa.workflow.js` 仅为**编排蓝图参考**(展示推荐扇出结构,供 AI/人参考,非可执行脚本、非传给工具运行)。
 > 推荐用户先开 **ultracode 模式**(让 AI 默认倾向多 agent 编排;skill/脚本无法自行开启它,也不存在 `claude workflow` shell 命令)。
-> 编排路径四质量模式:fan-out(每端/每合规节一 worker)+ pipeline(端内 跑链路→截3viewport)+ adversarial verify(每条 reviewer claim × N skeptic 独立质疑,多数过)+ completeness critic(Synthesis 单 agent 用确定性脚本写闸门 state)。
+> 蓝图建议的四质量形状(供 AI 现场组合 Workflow 工具时参考):fan-out(每端/每合规节一 worker)+ pipeline(端内 跑链路→截3viewport)+ adversarial verify(每条 reviewer claim × N skeptic 独立质疑,多数过)+ completeness critic(Synthesis 单 agent 用确定性脚本写闸门 state)。
 >
-> **降级:未开 ultracode / 不便编排时**,单 agent 按下方 SKILL.md 原 7 步顺序串行执行,**产物与闸门 key 一字不差**:
+> **降级:未开 ultracode 或 AI 未走多 agent 编排时**(对比是 Claude 内置 Workflow 工具现场编排 vs 单 agent 串行),单 agent 按下方 SKILL.md 原 7 步顺序串行执行,**产物与闸门 key 一字不差**:
 > - **Step 1 覆盖契约**:逐链路对账(串行逐条)。
 > - **Step 2 多端 smoke**:对 PLATFORM-MATRIX 声明的端逐端跑核心链路、各端用 `ui-snapshot.sh` 截 3 viewport,deferred 端写理由。失去并行只是更慢,逻辑等价。
 > - **Step 4 反绕过 + paywall**:不开 N-skeptic,改为单 agent 自检 + **强制截图证据**(`no-bypass.png` / `paywall-full.png` / `iap-sandbox.png`)作为最强证据(本文件第 275 行已承认此步归 honor system),把"对抗"降级为"**必须有真实登录截图否则判 FAIL**"的硬证据闸门。

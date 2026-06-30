@@ -84,7 +84,7 @@ echo 'export AI_RULES_ROOT="'$(pwd)'/app-factory"' >> ~/.zshrc && source ~/.zshr
 - ✅ 工具 skill 已内置:app-store-review-survival / app-store-screenshots / codex-image-bridge / ios-ship-cli + frontend-design 簇(21)
 - ✅ 3 缺口已接:UI 簇 → shape/build/qa;ios-ship-cli → ship;app-store-screenshots → qa/ship
 - 🎨 **design-first**(导入图/设计稿 → 高保真 app + 完整后端 API):新增 `design-restore`(设计→高保真app)+ `backend-forge`(功能/契约→后端API)两 skill,经 manifest + openapi 两份机读产物当桥,接进 shape/build/qa(闸门 advisory)。详见 **`ROADMAP-design-first.md`**
-  - **执行模型**:这两 skill 主路径 = AI 在会话内调用 **Workflow 工具**做多 agent 编排(传 `scripts/design-first/*.workflow.js` 内容为 `script`);**推荐用户开 ultracode 会话模式**(让 AI 默认倾向编排,非 skill 可强制);未开 / 不便编排时降级为单 agent 顺序。**不存在 `claude workflow` shell 命令。**
+  - **执行模型**:这两 skill 主路径 = AI 在会话内调用 **Workflow 工具**(Claude 内置工具)做多 agent 编排;skill 用自然语言描述编排意图(扇出哪些子任务 / parallel / pipeline / 对抗验证 / loop 条件 / 各 agent 职责 / 产物落点),AI 据此**现场组合并执行 script**。`scripts/design-first/*.workflow.js` **不是传给工具运行的脚本,而是编排蓝图参考**(展示推荐扇出结构,供 AI / 人参考)。**推荐用户开 ultracode 会话模式**(让 AI 默认倾向编排,非 skill 可强制);未开 / 不便编排时降级为单 agent 顺序。**不存在 `claude workflow` shell 命令。**
 - ✅ 依赖(rules/templates/hooks/scripts)全内置,无硬编码路径,clone 即用
 - 📋 详细编排 + 机械闸门 + 仓库结构:**见 `ORCHESTRATION.md`**
 

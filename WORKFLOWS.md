@@ -1,7 +1,7 @@
-# WORKFLOWS — app-factory 怎么用 ultracode + Workflow 编排
+# WORKFLOWS — app-factory 怎么借助 ultracode + Claude 内置 Workflow 工具做编排
 
-> 本文是 app-factory 编排机制的权威说明。读完你应该清楚:谁开 ultracode、AI 怎么编排、哪些关有 `.workflow.js`、不开会怎样、为什么编排不是装饰。
-> 一句话先记住:**Workflow 编排是 app-factory 完成复杂需求的主路径,不是可选加分项。** 它是这套多关流水线在「真覆盖 + 真对抗 + 单点写闸门」上能站住的根本原因;不开编排只是退到「能跑但慢且对抗弱」的兜底形态。
+> 本文说明 app-factory 各 skill 如何引导 AI 用 Claude 内置 Workflow 工具编排。读完你应该清楚:谁开 ultracode、AI 怎么编排、哪些关备有 `.workflow.js` 编排蓝图参考、不开会怎样、为什么编排不是装饰。Workflow 工具归 Claude,本项目不定义、不拥有任何 workflow 运行时。
+> 一句话先记住:**借 Claude 内置 Workflow 工具做编排,是 app-factory 完成复杂需求的主路径,不是可选加分项。** 能在「真覆盖 + 真对抗 + 单点写闸门」上站住的根本原因,是 AI 在 ultracode 下用 Claude 内置 Workflow 工具、按各 skill 的编排意图现场组合并执行 script,而不是本项目自有的 workflow 系统;不开编排只是退到「能跑但慢且对抗弱」的兜底形态。
 
 ---
 
@@ -11,13 +11,13 @@
 
 | 概念 | 它是什么 | 谁控制它 | 关键事实 |
 |---|---|---|---|
-| **ultracode** | 用户开启的 Claude Code **会话「高级模式」** | **用户**(手动开) | skill / 脚本**开不了**它。它只是让 AI **默认倾向**多 agent 编排。 |
-| **Workflow** | AI(Claude)在会话内可调用的**一个【工具】** | **AI** 调用 | 传 `script`(JS 编排:`meta` + `phase` + `parallel`/`pipeline` + `agent({schema})`)。这是真正干编排的东西。 |
-| **skill** | 一个 SKILL.md + 配套脚本的能力包 | 仓库里写死 | 只能**提供**编排脚本、**指示** AI 去调 Workflow 工具、**推荐**用户开 ultracode、给**降级**路径。 |
+| **ultracode** | 用户开启的 Claude Code **会话「高级模式」** | **用户**(手动开) | skill / 脚本**开不了**它。它只是让 AI **默认倾向**用 Claude 内置 Workflow 工具做多 agent 编排。 |
+| **Workflow** | Claude Code / ultracode 的**内置【工具】**(归 Claude,**非本项目**) | **AI** 调用 | AI 调用它时,由 AI **现场写** `script`(用 `meta`/`phase`/`parallel`/`pipeline`/`agent({schema})` 等编排原语)并执行;script **不是**从本仓某文件加载来跑的。 |
+| **skill** | 一个 SKILL.md + 配套脚本的能力包 | 仓库里写死 | 只能用自然语言**描述编排意图/形状**、**指示** AI 去调 Claude 内置 Workflow 工具、**推荐**用户开 ultracode、给**降级**路径。skill **不提供可执行 workflow,不运行 workflow**。 |
 
 **skill 能做的,只有这四件:**
-1. 提供编排脚本 `*.workflow.js`;
-2. 在 SKILL.md 写明「执行本 skill 时,AI 调用 Workflow 工具,`script` = 该 `.workflow.js`」;
+1. 用自然语言**描述编排意图/形状**(扇出哪些子任务、parallel/pipeline、对抗验证什么、loop 到什么条件、各 agent 干啥、产物落哪);可附 `*.workflow.js` 作为**【编排蓝图参考/示例】**(展示推荐扇出结构,供 AI/人参考),它**不是**传给工具去跑的可执行脚本;
+2. 在 SKILL.md 写明「执行本 skill 时,AI(在 ultracode 下)用 Claude 内置 Workflow 工具,按本 skill 描述的编排意图**现场组合** script 并执行;`.workflow.js` 仅作蓝图参考」;
 3. **推荐(非强制)**用户开 ultracode 模式;
 4. 给「未开 / 不便编排时」的单 agent 降级路径。
 
@@ -29,8 +29,8 @@
 
 **编排脚本里 agent 不直接写闸门 state。** `.workflow.js` 里 `agent()` 只产「发现 JSON」;真正的闸门 state 由 **Bash 调 `scripts/app-gate.sh` / `scripts/design-first/` 下的确定性脚本**产出(这些脚本已存在,key 已定死,**勿改其 key**)。这条「agent 产料 → Bash 跑确定性脚本产 state」是所有关共用的契约。
 
-**Workflow runtime 提供的全局函数**(写 `.workflow.js` 时可直接用,顶层 `await`):
-`phase(title)` / `parallel(fns[])` / `pipeline(items, ...stages)` / `agent(prompt, {label, phase, schema})` / `log()`。
+**Claude 内置 Workflow 工具在 AI 现场写的 script 里可用的编排原语**(顶层 `await`):
+`phase(title)` / `parallel(fns[])` / `pipeline(items, ...stages)` / `agent(prompt, {label, phase, schema})` / `log()`。`.workflow.js` 蓝图里出现这些只是示意推荐结构。
 **每个并行 worker 必须 `.catch` 兜底**成一个合法 fallback,否则一路崩会拖垮整段。
 
 ---
@@ -46,15 +46,17 @@ ultracode 是**用户侧**的开关,AI / skill 不能代开。开法二选一:
 
 ---
 
-## ③ 哪些关有 `.workflow.js` 编排
+## ③ 哪些关备有 `.workflow.js` 编排蓝图参考
 
-主线五关 `.workflow.js`(discover/lockdown/shape/build/qa)在 `scripts/workflows/`;design-first 前置两个(`design-restore`/`backend-forge`)在 `scripts/design-first/`。都沿用 design-restore 的写法(`export const meta` + `phase()` + `parallel`/`pipeline` + `agent({label,phase,schema})` + 每 worker `.catch`)。
+> 本节列的 `.workflow.js` 都是**供 AI/人参考的推荐扇出结构蓝图**,不是本项目运行的编排脚本。
+
+主线五关备有 `.workflow.js` 编排蓝图(discover/lockdown/shape/build/qa)在 `scripts/workflows/`;design-first 前置两个(`design-restore`/`backend-forge`)在 `scripts/design-first/`。这些蓝图展示推荐扇出结构,供 AI 现场组合 script 时参考(`export const meta` + `phase()` + `parallel`/`pipeline` + `agent({label,phase,schema})` + 每 worker `.catch`)。
 
 **已有(基线,本文照搬其契约):**
 - `design-restore.workflow.js` — 设计稿 → 高保真前端(Extract / Per-Screen loop-until-converge / Synthesis)。
 - `backend-forge.workflow.js` — 功能·契约 → 完整后端 API(OpenAPI-SSOT / Per-Endpoint pipeline / Adversarial-Rules / Synthesis)。
 
-> design-restore / backend-forge 是 **shape 关的前置子编排**(Step1.0 / Step1.85),既可在 shape.workflow.js 里 `await import` 进来,也可由 SKILL 顺序调。
+> design-restore / backend-forge 是 **shape 关的前置子编排意图**(Step1.0 / Step1.85);其 `.workflow.js` 仅是蓝图参考,AI 可参照它把对应扇出并入 shape 的编排,或由 SKILL 顺序调降级路径。
 
 **本轮新增(app-factory 主线五关):**
 - `discover.workflow.js` — Phase A 探索(关键词 → 笛卡尔积全网调研 → 提议·红队对抗 → mockup → 收口闸门)。
@@ -63,9 +65,11 @@ ultracode 是**用户侧**的开关,AI / skill 不能代开。开法二选一:
 - `build.workflow.js` — 逐 TASK pipeline(Contract-Gate → Implement 并行 → Test-Loop 熔断 → 对抗 review + 闸门 + commit)。
 - `qa.workflow.js` — A-GATE 3 验收(契约侦察 → 多端 smoke 扇出 → 反绕过 N-skeptic 对抗 → 合规 9 节扫 → 收口)。
 
-### 对照表:关 → 编排脚本 → 落什么 state → 哪个闸门读
+### 对照表:关 → 编排蓝图参考 → 落什么 state → 哪个闸门读
 
-| 关(skill) | 编排脚本 | 编排骨架(质量模式) | 落的 state 文件(随项目根) | 闸门(确定性脚本) |
+> 「编排蓝图参考」列的 `.workflow.js` 文件是**供参考的扇出结构蓝图**,不是传给 Workflow 工具运行的脚本。
+
+| 关(skill) | 编排蓝图参考(`.workflow.js`) | 编排骨架(质量模式) | 落的 state 文件(随项目根) | 闸门(确定性脚本) |
 |---|---|---|---|---|
 | **discover** | `discover.workflow.js` | Frame(单)→ Research(parallel × sources×actions 笛卡尔积全覆盖)→ Decide+RedTeam(pipeline propose→attack 对抗)→ Visualize → Synthesis(completeness critic 单点写) | `.claude/state/market-research/*.json`、`docs/spec.md`(3章)、`docs/discovery-summary.md`、`.claude/state/clearance-discover.json`、`skill-signal.json`、`discarded-directions.txt` | `app-gate.sh app-gate discover`(sg_app_* 5 检 + discovery-summary 卡口)→ `clearance-discover.json` |
 | **lockdown** | `lockdown.workflow.js` | 入口校验(单)→ 五路锚定 `parallel([spike,economics,naming,backend,compliance])`(命名内 pipeline gen→check→pick)→ 对抗复审(parallel 红队)→ 汇总+机械验收(顺序)→ 信号续接 | `spike-results.json`、`asr-survival-scan.json`、`naming-candidates.json`、`evidence/*`、`spec.md` 5 章、`clearance-lockdown.json`、`skill-signal.json` | `app-gate.sh app-gate lockdown`(spike双语真跑 / 经济真数据 / 命名真证据 / 后端真值 / 合规真扫 / bundle 一致 六检)→ `clearance-lockdown.json` |
@@ -76,7 +80,7 @@ ultracode 是**用户侧**的开关,AI / skill 不能代开。开法二选一:
 > 三条铁律(对照表里反复出现,不是巧合):
 > 1. **闸门权威只有一个**:`scripts/app-gate.sh app-gate <gate>` 跑确定性检查、产 `clearance-<gate>.json`。编排 / 降级两条路都跑它,key 完全一致。
 > 2. **每关只有一个写 state 的点**(Synthesis / 收尾 phase),避免并行写冲突。worker 只产「发现 JSON」,不碰 state key。
-> 3. **新增关不新造 key、不改 `app-gate.sh`**。Workflow 只负责并行调度;真 state 仍由既有脚本 / 既定路径产出。
+> 3. **新增关不新造 key、不改 `app-gate.sh`**。Claude 内置 Workflow 工具只在会话内做并行调度;真 state 仍由既有确定性脚本 / 既定路径产出。`.workflow.js` 蓝图不产 state。
 
 ---
 
@@ -106,5 +110,5 @@ ultracode 是**用户侧**的开关,AI / skill 不能代开。开法二选一:
 
 ## ⑤ 一句话定调
 
-**Workflow 编排是 app-factory 完成复杂需求的主路径,不是可选装饰。**
-它把「全网真覆盖(笛卡尔积扇出)+ 真对抗(独立红队 / 多 skeptic)+ 单点写闸门(确定性脚本)」三件事在多 agent 下做实;单 agent 降级只是它的兜底投影,保正确不保速度与对抗深度。推荐做法恒为:**用户开 ultracode → AI 调 Workflow 工具按 `.workflow.js` 编排 → 收口跑 `app-gate.sh` 产 `clearance-<gate>.json`**;开不了再降级,降级也照样过同一道闸门。
+**借 Claude 内置 Workflow 工具做编排,是 app-factory 完成复杂需求的主路径,不是可选装饰。**
+它把「全网真覆盖(笛卡尔积扇出)+ 真对抗(独立红队 / 多 skeptic)+ 单点写闸门(确定性脚本)」三件事在多 agent 下做实;单 agent 降级只是它的兜底投影,保正确不保速度与对抗深度。推荐做法恒为:**用户开 ultracode → AI 用 Claude 内置 Workflow 工具,按各 skill 的编排意图(可参照 `.workflow.js` 蓝图)现场组合 script 并执行 → 收口跑 `app-gate.sh` 产 `clearance-<gate>.json`**;开不了再降级,降级也照样过同一道闸门。

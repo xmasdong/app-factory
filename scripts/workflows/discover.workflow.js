@@ -1,6 +1,8 @@
-// discover.workflow.js — ultracode Workflow 编排:一句话方向 → 自决 5 字段 + 一手证据 + mockup + 闸门
-// 怎么跑:AI 调用 Workflow 工具(Claude Code 内置·非 shell CLI),script = 本文件内容(Read 后传入)。
-//   ⚠️ 不存在 `claude workflow` shell 命令;ultracode 是用户手动开的会话模式,只让 AI 默认倾向用 Workflow 工具。
+// discover.workflow.js — 编排【蓝图参考】:一句话方向 → 自决 5 字段 + 一手证据 + mockup + 闸门 推荐的多 agent 扇出结构
+// 本文件性质:它是【蓝图参考】,展示该关推荐的多 agent 扇出结构(扇出哪些子任务、parallel/pipeline、对抗验证什么、loop 到什么条件、各 agent 干啥、产物落哪),不是本项目的可执行脚本。
+// 真执行时:用户手动开 ultracode 模式,AI(Claude)用 Claude 内置的【Workflow 工具】参考本蓝图当场组合编排(script 由 AI 现场写,非加载本文件运行)。
+//   ⚠️ Workflow 工具归 Claude/ultracode,非本项目定义;本项目不拥有 workflow 运行时,也没有 `claude workflow` 这种命令。
+//   ⚠️ ultracode 是用户手动开的会话高级模式;开了之后 AI 才默认倾向用 Workflow 工具编排。
 //   在目标业务项目根执行,确保 CLAUDE_PROJECT_DIR 指向它。降级见 skills/discover/SKILL.md(单 agent 顺序)。
 // 产物(随项目根,唯一写文件点在 Phase4):
 //   docs/spec.md(产品定位/市场调研/概念视觉 3 章节,严禁 lockdown 章节)
@@ -16,7 +18,7 @@
 //   loop(轻量熔断)    = red-team 判字段证据不足 → 回灌定向 Phase1 补一轮(最多 1 次)
 //   completeness critic= Phase4 单 agent 核覆盖 + 用确定性脚本写 state(唯一可信产出口,避并行写冲突)
 //
-// Workflow runtime 全局:phase(title) / parallel(fns[]) / pipeline(items,...stages) / agent(prompt,{label,phase,schema}) / log()
+// 蓝图里用到的编排原语(由 Claude 内置 Workflow 工具提供,非本项目定义):phase(title) / parallel(fns[]) / pipeline(items,...stages) / agent(prompt,{label,phase,schema}) / log()
 // 每个 agent 返回须符合 schema;每个并行 worker 必须 .catch 兜底成合法 fallback,否则一崩全崩(降级不静默,记 reason)。
 
 export const meta = {

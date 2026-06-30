@@ -8,7 +8,7 @@
 
 ## 0. 三句话先讲清
 
-1. **真 app 跑 design-restore / backend-forge，不要走 SKILL.md 里那套线性 Step**。线性 Step 只是「单 agent 降级档」（没装 workflow、或调试单点时用）。真跑用 `Workflow 工具(AI 调用·非CLI) scripts/design-first/<skill>.workflow.js` 编排。
+1. **真 app 跑 design-restore / backend-forge，不要走 SKILL.md 里那套线性 Step**。线性 Step 只是「单 agent 降级档」（没装 ultracode、或调试单点时用）。真跑：用户开 ultracode 后,AI 用内置 Workflow 工具,参照蓝图 `scripts/design-first/<skill>.workflow.js`（编排蓝图参考）的扇出结构,当场组合 script 并执行。
 2. **为什么主路径是 Workflow 多 agent 编排（推荐用户开 ultracode）**：单 agent 顺序做不到「每个 endpoint / 每屏全覆盖 + 对抗验证 + 收敛环」这种质量与覆盖；ultracode 只是让 AI 默认倾向调 Workflow 工具,skill 强制不了用户会话模式（见 §3）。
 3. **唯一对外接口是 4 个 state JSON**：编排跑完，闸门 `app-gate.sh` 只读这 4 个文件验收。脚本写 JSON 的 key 必须逐字对齐（见 §4），写错一个 key 整关失效。
 
@@ -25,7 +25,7 @@
 
 | 工具 | 版本 / 来源 | 用途 |
 |---|---|---|
-| node | ≥ 20（本机实测 v26 OK） | 跑 `.workflow.js` |
+| node | ≥ 20（本机实测 v26 OK） | 运行 `scripts/design-first/` 下的确定性脚本(.mjs)；蓝图参考 `.workflow.js` 亦为 node 源 |
 | claude（Claude Code） | 已装 | 提供 **Workflow 工具**(AI 调用·非 CLI)做 ultracode 编排 |
 | jq | brew 自带 / `/usr/bin/jq` | 闸门解析 state JSON（**验收必需**） |
 
@@ -106,7 +106,7 @@ ls "$CLAUDE_PROJECT_DIR/docs/design/"           # 设计稿源放这里
 ### Step C — 跑 design-restore 编排（设计 → 高保真前端）
 
 ```bash
-# AI 调用 Workflow 工具(Claude Code 内置·非 shell CLI),script 取以下文件内容: \
+# 用户开 ultracode 后,AI 用内置 Workflow 工具,参照以下编排蓝图(供参考的推荐扇出结构)当场组合 script 执行: \
   /Users/xmasdong/opc/app-factory/scripts/design-first/design-restore.workflow.js
 ```
 
@@ -122,7 +122,7 @@ ls "$CLAUDE_PROJECT_DIR/docs/design/"           # 设计稿源放这里
 npx prism mock "$CLAUDE_PROJECT_DIR/api/openapi.yaml" --port 4010 &   # openapi 已存在才起；首跑可在 SSOT phase 后再起
 export TEST_API=http://127.0.0.1:4010
 
-# AI 调用 Workflow 工具(Claude Code 内置·非 shell CLI),script 取以下文件内容: \
+# 用户开 ultracode 后,AI 用内置 Workflow 工具,参照以下编排蓝图(供参考的推荐扇出结构)当场组合 script 执行: \
   /Users/xmasdong/opc/app-factory/scripts/design-first/backend-forge.workflow.js
 ```
 
@@ -134,7 +134,7 @@ export TEST_API=http://127.0.0.1:4010
 > 上线前要对**真后端**复跑（把 `TEST_API` 指向真 API，target 才会写 `real`）：
 > ```bash
 > npx supabase start && export TEST_API=$(npx supabase status -o json | jq -r '.API_URL')
-> # AI 调用 Workflow 工具(Claude Code 内置·非 shell CLI),script 取以下文件内容: /Users/xmasdong/opc/app-factory/scripts/design-first/backend-forge.workflow.js
+> # 用户开 ultracode 后,AI 用内置 Workflow 工具,参照编排蓝图 /Users/xmasdong/opc/app-factory/scripts/design-first/backend-forge.workflow.js 当场组合 script 执行
 > ```
 
 ### Step E — 编排内部真命令（agent 在 worker 里实际调的）
@@ -178,9 +178,9 @@ jq '.result, (.missing_fields|length), (.extra_fields|length)' "$CLAUDE_PROJECT_
 
 ---
 
-## 3. 主路径=AI 调用 Workflow 工具编排（写死）；推荐用户开 ultracode；降级=单 agent
+## 3. 主路径=用户开 ultracode 后 AI 用内置 Workflow 工具(Claude 的,非本项目)按蓝图当场组合执行；降级=单 agent
 
-> ⚠️ **核心澄清**:ultracode/Workflow 是 **Claude Code 会话内的【工具】**,由 **AI 调用**(传 `script` 参数)——**没有 `claude workflow` shell 命令**(本机 `claude --help` 无此子命令)。本文出现的"运行 xxx.workflow.js"一律指:**AI 调用 Workflow 工具,把该 .js 文件内容作为 `script` 传入**。`.workflow.js` 文件是仓库里留存的编排脚本源,供 AI 读取后传给工具;脚本内 agent 再用 Bash 调 `scripts/design-first/` 下的确定性脚本产出 state JSON。
+> ⚠️ **核心澄清**:ultracode/Workflow 是 **Claude Code 会话内的【工具】**,由 **AI 调用**(传 `script` 参数)——**没有 `claude workflow` shell 命令**(本机 `claude --help` 无此子命令)。本文出现的"跑 xxx.workflow.js"一律指:**用户开 ultracode 后,AI 用内置 Workflow 工具,参照该 `.workflow.js`（编排蓝图参考,展示推荐扇出结构）当场组合并执行 script**——`.workflow.js` 不是"传给工具去跑"的可执行脚本,只是给 AI/人看的蓝图;AI 现场写的 script 内 agent 再用 Bash 调 `scripts/design-first/` 下的确定性脚本产出 state JSON。
 
 ### 3.1 为什么主路径是 Workflow 编排（推荐 ultracode），单 agent 仅降级
 
@@ -191,17 +191,17 @@ jq '.result, (.missing_fields|length), (.extra_fields|length)' "$CLAUDE_PROJECT_
 | **收敛** | 一遍过，diff 不达标也没有再修一轮的机制 | screen worker 内 `for` 循环 + 单调降判据 + k 轮熔断，**修到收敛或停** |
 | **完整性核对** | 没有「谁来检查我漏了没」 | Synthesis phase 的 completeness critic 专门核覆盖再写 state |
 
-四个 Workflow 编排模式在脚本里的归位：
+四个 Workflow 编排模式在蓝图里的归位（AI 现场组合 script 时照此扇出）：
 
 - **fan-out 全覆盖** = `parallel(endpoints)` / `parallel(screen × viewport)`
 - **adversarial verify** = `parallel(N skeptic)` 多数投票
 - **loop-until-converge** = screen worker 内 `for` + 单调降判据 + k 轮熔断
 - **completeness critic** = Synthesis phase 单 agent 核覆盖再写 state JSON（**唯一写闸门 JSON 的点**，保证 key 严格对齐）
 
-### 3.2 Workflow runtime API（来自 whatfish/app_build.workflow.js 实测形状）
+### 3.2 Workflow 工具(Claude 内置)的 runtime API 形状（来自 whatfish/app_build.workflow.js 这类蓝图实测形状,供 AI 现场组合 script 时参照）
 
 - 顶层 `export const meta = { name, description, phases:[{title,detail}] }`
-- 脚本体是顶层 await 脚本，可直接调全局：
+- 蓝图(及 AI 现场组合的 script)是顶层 await 脚本,可直接调 Workflow 工具提供的全局:
   - `phase(title)` —— 切阶段
   - `parallel(fns[])` —— 数组里每个 `()=>Promise` 并发跑，返回结果数组
   - `agent(prompt, {label, phase, schema})` —— 起一个子 agent，`schema` 是 JSON Schema，agent 必须按 schema 返回结构化对象
@@ -346,8 +346,8 @@ const synth = await agent(
 return { extract, perScreen, synth }
 ```
 
-> 这两段同时写进对应 `skills/backend-forge/SKILL.md`、`skills/design-restore/SKILL.md` 的新章节 `## 主执行路径:AI 调用 Workflow 工具编排（推荐用户开 ultracode;降级=单 agent 顺序）`，并在执行计划顶部加一句：
-> 「真 app 跑时不走线性 Step，主路径 = AI 调用 Workflow 工具(非 shell CLI),script 取 `scripts/design-first/<skill>.workflow.js` 内容；推荐用户开 ultracode 模式;线性 Step 仅作单 agent 降级档。」
+> 这两段同时写进对应 `skills/backend-forge/SKILL.md`、`skills/design-restore/SKILL.md` 的新章节 `## 主执行路径:用户开 ultracode 后 AI 用内置 Workflow 工具(Claude 的)参照蓝图当场组合执行;降级=单 agent 顺序`，并在执行计划顶部加一句：
+> 「真 app 跑时不走线性 Step，主路径 = 用户开 ultracode 后 AI 用内置 Workflow 工具,参照编排蓝图 `scripts/design-first/<skill>.workflow.js`（推荐扇出结构,仅供参考）当场组合 script 执行；线性 Step 仅作单 agent 降级档。」
 
 ---
 

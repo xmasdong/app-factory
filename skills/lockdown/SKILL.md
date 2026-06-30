@@ -5,18 +5,18 @@ description: "Lock down all external anchors after user approval — technical s
 
 # /lockdown — Phase B 锚定 (2-touch workflow 的 TOUCH 2 之后, AUTONOMOUS)
 
-> 🟢 **本 skill 主执行路径 = AI 调用 Workflow 工具**(script = `scripts/workflows/lockdown.workflow.js`);**推荐 ultracode 模式**(让 AI 默认倾向编排)。
-> Workflow 是 AI 在会话内可调用的内置工具(传 script:meta + phase + parallel/pipeline + agent({schema}));**不存在 `claude workflow` shell 命令,skill 也开不了用户的 ultracode 模式**——只能推荐。编排版五路并行锚定 + 红队对抗复审,真 state 仍由既有脚本/路径产出,闸门权威仍是 `app-gate.sh app-gate lockdown`。
+> 🟢 **本 skill 推荐执行形状 = ultracode 模式下,AI 用 Claude 的内置 Workflow 工具,按本 SKILL.md 描述的编排意图现场组合 script 并执行**;`scripts/workflows/lockdown.workflow.js` 只是**编排蓝图参考**(展示推荐的五路扇出结构,供 AI/人参考,不是被传给工具运行的脚本)。本项目不拥有任何 workflow 运行时。
+> Workflow 是 Claude Code / ultracode 的**内置工具**(归 Claude);AI 在会话内现场组合 script(meta + phase + parallel/pipeline + agent({schema}))并执行——script 是 AI 当场写的,不是从本仓文件加载来跑。**不存在 `claude workflow` shell 命令,skill 也开不了用户的 ultracode 模式**——只能推荐。按蓝图做五路并行锚定 + 红队对抗复审;真 state 仍由既有确定性脚本/路径产出,闸门权威仍是 `app-gate.sh app-gate lockdown`。
 >
 > **降级路径(未开 ultracode / 不便编排时)= 单 agent 顺序自跑,不动闸门**:
 > 严格按本 SKILL.md 现有顺序:**Step 2.1 spike → 2.2 经济 → 2.3 命名(候选→查重→选) → 2.4 后端 → 2.5 合规 → Step 3 跑 `app-gate.sh app-gate lockdown` → Step 4 信号 + 续接 /shape**。
 >
 > 降级时三处省心做法:
 > 1. 命名 25 次查重(5 候选 × 5 源)用一个 Bash for 循环并发跑(curl 丢后台 `&` + `wait`),不需 agent 并行也能压时间——这是降级里唯一值得手动并发的 IO 密集点。
-> 2. 对抗复审(编排版 Phase 2 红队)降级为:同一 agent 写完每节后自检一遍反薅/查重完整性,不再起独立 reviewer。
+> 2. 对抗复审(按蓝图编排时的 Phase 2 红队)降级为:同一 agent 写完每节后自检一遍反薅/查重完整性,不再起独立 reviewer。
 > 3. loop-until(命名 3 轮避冲突 / spike 3 次切备选)仍在单 agent 内用普通循环逻辑跑,行为与编排版一致。
 >
-> **结果等价性**:降级版与编排版产出**完全相同的 state 文件**、过**完全相同的 `app-gate.sh lockdown` 闸门**、写**相同的 `clearance-lockdown.json`**。差别只在墙钟时间(5 段串行 vs 1 段并行)和对抗深度(自检 vs 独立红队),不影响正确性与续接。
+> **结果等价性**:顺序自跑路径与按蓝图编排路径产出**完全相同的 state 文件**、过**完全相同的 `app-gate.sh lockdown` 闸门**、写**相同的 `clearance-lockdown.json`**。差别只在墙钟时间(5 段串行 vs 一段并行)和对抗深度(自检 vs 独立红队),不影响正确性与续接。
 
 > 🎨 **design-first**:命名/经济/合规/后端**四项不豁免**;Step2.1 技术 spike 源从"mockup 关键交互"改为"design-manifest 关键交互 + 后端能力假设";`backend-readiness.md` 加一行**后端选型决策**(默认 Supabase + 声明式 RLS:把"越权"这个 AI 头号幻觉区变成可审计 SQL)。
 
