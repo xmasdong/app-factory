@@ -115,7 +115,17 @@ mkdir -p "$STATE_DIR"
 RAW_LOG="$(mktemp -t contract-test.XXXXXX)"
 trap 'rm -f "$RAW_LOG"' EXIT
 
-ST_ARGS=( run "$SPEC" --base-url "$BASE_URL" --checks all )
+ST_ARGS=( run "$SPEC" )
+# base url: schemathesis 4.x 用 --url, 3.x 用 --base-url (探测)
+if "$ST_CMD" run --help 2>/dev/null | grep -q -- '--url'; then
+  ST_ARGS+=( --url "$BASE_URL" )
+else
+  ST_ARGS+=( --base-url "$BASE_URL" )
+fi
+# checks: 3.x 有 --checks all; 4.x 默认全跑(无 --checks)
+if "$ST_CMD" run --help 2>/dev/null | grep -q -- '--checks '; then
+  ST_ARGS+=( --checks all )
+fi
 # hypothesis 用例上限: 新旧版本参数名不同, 探测后择一
 if "$ST_CMD" run --help 2>/dev/null | grep -q -- '--max-examples'; then
   ST_ARGS+=( --max-examples "$MAX_EXAMPLES" )
@@ -153,7 +163,7 @@ fi
 # 以及 "FAILED" 块里的 "METHOD /path" 行。
 FAILURES_JSON="[]"
 if [[ "$RESULT" == "FAIL" ]]; then
-  FAILURES_JSON="$(
+  FAILURES_JSON="$( {
     grep -aE 'FAILED|failed|ERROR|error' "$RAW_LOG" \
       | grep -aoE '(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS) +[^ ]+|(status_code_conformance|response_schema_conformance|content_type_conformance|response_headers_conformance|negative_data_rejection|use_after_free|not_a_server_error|ignored_auth)' \
       | sort -u \
@@ -170,7 +180,7 @@ if [[ "$RESULT" == "FAIL" ]]; then
                       check:( if ($chks|length)>0 then ($chks[0]) else "schema" end),
                       detail:"see schemathesis output" } ]
             end'
-  )"
+  } 2>/dev/null || true )"
   # jq 任何一步失败兜底成非空数组(保证 FAIL 时 failures 非空)
   if ! printf '%s' "$FAILURES_JSON" | jq -e 'type=="array"' >/dev/null 2>&1; then
     FAILURES_JSON='[{"endpoint":"unknown","check":"schema","detail":"解析失败, 见 schemathesis 原始输出"}]'

@@ -203,7 +203,7 @@ MISSING="$(comm -23 <(printf '%s\n' "$DECLARED_SORTED") <(printf '%s\n' "$ACTUAL
 EXTRA="$(comm -13 <(printf '%s\n' "$DECLARED_SORTED") <(printf '%s\n' "$ACTUAL_SORTED") | sed '/^$/d')"
 
 # 用 path 前缀标注字段来源, 便于多 endpoint 聚合排查
-tag() { local f; while IFS= read -r f; do [[ -n "$f" ]] && printf '%s%s\n' "$1" "$f"; done; }
+tag() { local f; while IFS= read -r f; do [[ -n "$f" ]] && printf '%s%s\n' "$1" "$f"; done; return 0; }
 MISSING_TAGGED="$(printf '%s\n' "$MISSING" | tag "${METHOD_UPPER} ${OAS_PATH}#")"
 EXTRA_TAGGED="$(printf '%s\n' "$EXTRA"   | tag "${METHOD_UPPER} ${OAS_PATH}#")"
 
