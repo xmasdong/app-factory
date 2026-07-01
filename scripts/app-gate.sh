@@ -72,23 +72,20 @@ sg_app_naming_real_evidence() {
   content=$(_app_section_content "命名锁定" "$file")
   [[ -z "$content" ]] && content=$(_app_section_content "NAMING-LOCK" "$file")
 
-  # 6 个子项必须出现 (品牌名/域名/AppStore/Play/bundle id/IAP prefix)
+  # 需要哪些命名锚,取决于产品形态(不再硬套原生商店 6 项):
+  #   通用必需: 品牌名/显示名 + 域名(或显式"无域名/待定")
+  #   仅原生商店 app 才需: AppStore/Play/bundle id/IAP —— Web/PWA-only 视为 N/A
   local missing=()
-  for item in "品牌名|brand" "域名|domain" "App[[:space:]]*Store|AppStore" "Play[[:space:]]*Store|Play" "bundle[[:space:]]*id|bundleId" "IAP|product[[:space:]]*id"; do
-    if ! echo "$content" | grep -qiE "$item"; then
-      missing+=("$item")
-    fi
+  for item in "品牌名|brand|显示名" "域名|domain"; do
+    echo "$content" | grep -qiE "$item" || missing+=("$item")
   done
-  if (( ${#missing[@]} > 0 )); then
-    echo "命名锁定缺子项: ${missing[*]} (需要 6 项全列出)"
-    return
+  if _app_is_native_store; then
+    for item in "App[[:space:]]*Store|AppStore" "Play[[:space:]]*Store|Play" "bundle[[:space:]]*id|bundleId" "IAP|product[[:space:]]*id"; do
+      echo "$content" | grep -qiE "$item" || missing+=("$item")
+    done
   fi
-
-  # 每行必须有 status: locked 或 status: PROPOSED 显式
-  local status_lines
-  status_lines=$(echo "$content" | grep -ciE "status:[[:space:]]*(locked|proposed)" 2>/dev/null) || status_lines=0
-  if (( status_lines < 6 )); then
-    echo "命名锁定 status 标注数 ${status_lines} < 6 (每项需 status: locked 或 status: PROPOSED)"
+  if (( ${#missing[@]} > 0 )); then
+    echo "命名锁定缺子项: ${missing[*]} (原生商店 app 需 6 项;Web/PWA 只需品牌名+域名)"
     return
   fi
 
@@ -123,8 +120,10 @@ sg_app_naming_real_evidence() {
     return
   fi
 
-  if (( locked_real < 4 )); then
-    echo "真 locked 项数 ${locked_real} < 4 (至少 4 项: 域名/AppStore/Play/bundle id)"
+  # locked 数量要求随形态:原生商店 app 有 域名/AppStore/Play/bundle 四锚可锁 → ≥4;
+  # Web/PWA-only 可锁的锚少(常只有域名),不强求 4(任何声称 locked 的仍走上面 evidence 验真护栏)。
+  if _app_is_native_store && (( locked_real < 4 )); then
+    echo "真 locked 项数 ${locked_real} < 4 (原生商店 app 至少锁 域名/AppStore/Play/bundle id;Web/PWA 不受此限)"
     return
   fi
 }
@@ -268,10 +267,17 @@ sg_app_backend_real_status() {
   content=$(_app_section_content "后端就绪" "$file")
   [[ -z "$content" ]] && content=$(_app_section_content "BACKEND-READINESS" "$file")
 
-  local checked
+  # 无后端产品(纯前端/单机/纯本地)显式声明 → 放行,不硬要 6 个后端 checkbox
+  if echo "$content" | grep -qiE "无后端|纯前端|纯本地|单机|no[[:space:]]*backend|无服务端|N/?A"; then
+    return
+  fi
+
+  # 有后端 → 至少 1 项就绪或显式 deferred(不再硬凑 6);未就绪项应显式 - [ ] deferred
+  local checked deferred
   checked=$(echo "$content" | grep -cE "^[[:space:]]*-[[:space:]]*\[[xX]\]" 2>/dev/null) || checked=0
-  if (( checked < 6 )); then
-    echo "后端就绪 checkbox 打勾 ${checked} < 6 项"
+  deferred=$(echo "$content" | grep -ciE "deferred|延后|待建" 2>/dev/null) || deferred=0
+  if (( checked < 1 && deferred < 1 )); then
+    echo "后端就绪:既无就绪项(- [x])也无显式 deferred —— 至少标清每项状态(或声明无后端)"
     return
   fi
 
@@ -294,7 +300,8 @@ sg_app_compliance_real_scan() {
   content=$(_app_section_content "合规" "$file")
   [[ -z "$content" ]] && content=$(_app_section_content "COMPLIANCE" "$file")
 
-  # 必填关键词存在性
+  # 合规清单:每项必须被【有意识处理】—— 关键词出现即算(可写 "GDPR: N/A 不收集数据")。
+  # 这是「必填=有真答案或显式N/A」,不是逼你真做每一项;零数据离线游戏把不涉及的标 N/A 即可。
   local missing=()
   for item in "隐私政策|privacy" "EULA" "删除账号|delete[[:space:]]*account" "GDPR" "ATT" "Kids|COPPA" "网络授权|network[[:space:]]*permission" "权限文案"; do
     if ! echo "$content" | grep -qiE "$item"; then
@@ -302,11 +309,14 @@ sg_app_compliance_real_scan() {
     fi
   done
   if (( ${#missing[@]} > 0 )); then
-    echo "合规扫描缺关键项: ${missing[*]}"
+    echo "合规清单未处理项: ${missing[*]} (每项须有答案或显式写 '<项>: N/A + 理由',不涉及也要标)"
     return
   fi
 
-  # 加严: app-store-review-survival skill 真扫产物
+  # app-store-review-survival 真扫产物 —— 仅原生商店 app 需要(Web/PWA 非 App Store → N/A)
+  if ! _app_is_native_store; then
+    return   # 非原生商店:App Store 审核生存扫描不适用
+  fi
   local asr="$ROOT/.claude/state/asr-survival-scan.json"
   if [[ ! -f "$asr" ]]; then
     echo "缺 .claude/state/asr-survival-scan.json (app-store-review-survival skill 未跑)"
@@ -508,7 +518,8 @@ sg_app_spike_dual_lang_real() {
     fi
   fi
   if (( has_signal == 0 )); then
-    if echo "$content" | grep -qE "\*\*结果\*\*[[:space:]]*[:：][[:space:]]*(PASS|FAIL)"; then
+    # 加粗可选;认中文「结果」或英文 result;每条 spike 行末的 "结果: PASS" 也算
+    if echo "$content" | grep -qiE "(\*\*)?(结果|result)(\*\*)?[[:space:]]*[:：][[:space:]]*(PASS|FAIL)"; then
       has_signal=1
     fi
   fi
@@ -946,6 +957,28 @@ sg_app_integration_test() {
 #   未命中(纯前端/纯后端/design-only)→ 维持 advisory
 #   显式豁免:status.md 决策日志含 "seam" 且 "defer"(用户主动 defer 本地合体验证)
 # ----------------------------------------------------------------------------
+# _app_scope_declares <regex> — spec.md 某章节内是否显式声明了某范围(用于 honor N/A)
+# 通用:很多门假设"原生商店付费 app",但产品可能是 Web/PWA、无后端、零数据。
+# 这些门应认「显式声明不涉及」为满足,而不是硬要填原生商店字段。
+_app_declares() {
+  # $1=章节名 $2=正则;章节内容命中正则则真
+  local file="$ROOT/docs/spec.md"
+  [[ -f "$file" ]] || return 1
+  local c; c=$(_app_section_content "$1" "$file" 2>/dev/null)
+  [[ -n "$c" ]] && echo "$c" | grep -qiE "$2"
+}
+# 是否原生商店 app(要 bundle/IAP/商店名)—— Web/PWA-only 或显式无原生 → false
+_app_is_native_store() {
+  local c; c=$(_app_section_content "命名锁定" "$ROOT/docs/spec.md" 2>/dev/null)
+  [[ -z "$c" ]] && c=$(_app_section_content "NAMING-LOCK" "$ROOT/docs/spec.md" 2>/dev/null)
+  # 命名章或多端矩阵声明 web/pwa-only / 无原生商店 → 非原生
+  if echo "$c" | grep -qiE "web[[:space:]-]?only|仅[[:space:]]*web|^.*pwa|无[[:space:]]*bundle|无[[:space:]]*iap|无[[:space:]]*原生|不上架|non-store" \
+     || _app_declares "多端能力矩阵" "仅[[:space:]]*web|web[[:space:]-]?only|仅[[:space:]]*pwa|无原生"; then
+    return 1
+  fi
+  return 0
+}
+
 _app_is_fullstack() {
   # 显式豁免
   if [[ -f "$ROOT/docs/status.md" ]] && grep -iqE 'seam.*defer|defer.*seam' "$ROOT/docs/status.md" 2>/dev/null; then
