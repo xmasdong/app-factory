@@ -11,6 +11,7 @@ description: "Quality-assure the app before store submission — multi-platform 
 >
 > **降级:未开 ultracode 或 AI 未走多 agent 编排时**(对比是 Claude 内置 Workflow 工具现场编排 vs 单 agent 串行),单 agent 按下方 SKILL.md 原 7 步顺序串行执行,**产物与闸门 key 一字不差**:
 > - **Step 1 覆盖契约**:逐链路对账(串行逐条)。
+> - **Step 1.5 seam + 契约真跑**(全栈 app 硬门):boot 真后端 → 依次跑 `seam-smoke.sh` / `contract-test.sh --target real` / `e2e-contract.sh`,产 3 个 state JSON。单 agent 也必须跑,不因降级跳过。
 > - **Step 2 多端 smoke**:对 PLATFORM-MATRIX 声明的端逐端跑核心链路、各端用 `ui-snapshot.sh` 截 3 viewport,deferred 端写理由。失去并行只是更慢,逻辑等价。
 > - **Step 4 反绕过 + paywall**:不开 N-skeptic,改为单 agent 自检 + **强制截图证据**(`no-bypass.png` / `paywall-full.png` / `iap-sandbox.png`)作为最强证据(本文件第 275 行已承认此步归 honor system),把"对抗"降级为"**必须有真实登录截图否则判 FAIL**"的硬证据闸门。
 > - **Step 5 合规 9 节**:逐节串行扫。
@@ -44,6 +45,7 @@ description: "Quality-assure the app before store submission — multi-platform 
 ```
 - [ ] Step 0: 验 INPUT_CONTRACT
 - [ ] Step 1: 覆盖契约对账 (核心链路全部覆盖, 不覆盖链路显式)
+- [ ] Step 1.5: 前后端 seam 握手 + 契约真跑 (全栈 app 必跑, 硬门)
 - [ ] Step 2: 多端 smoke (Multi-Platform Smoke)
 - [ ] Step 3: UI 截图存档 (3 viewport × 每端)
 - [ ] Step 4: 审核员路径预演 (含反绕过)
@@ -59,6 +61,54 @@ description: "Quality-assure the app before store submission — multi-platform 
 读 spec.md `## 覆盖契约` 章节. 每条核心链路对照已跑的测试 + smoke 截图, 判定 PASS / FAIL.
 
 **重要:** /qa 不回答"还有没有遗漏". 只对照覆盖契约判断完整性. 发现链路缺失 → `new_paths_proposed_by_user` 字段记录, 回 /shape 修订契约, 不在本 skill 吸收.
+
+**⚠️ Step 1 是纸面对照(对着测试判 PASS),不证明前后端合体能跑。** 真握手在 Step 1.5。
+
+---
+
+## Step 1.5: 前后端 seam 握手 + 契约真跑 (全栈 app 硬门)
+
+> **为什么必填 (trade-copilot 实战教训):** app-factory 会分别产出「后端(测试绿)」+「前端(build 绿)」两个半体。**两半各自绿 ≠ 合体能跑** —— 前端可能全程 mock fallback、后端单独跑,seam(前端声明要调的 endpoint 在真后端是否存在/可握手)从没验过,`npm run dev` 从没指向真后端。Step 1 的纸面对照抓不到这个。这一步用真 HTTP 打通那条缝。
+
+**适用判定:** 项目同时有「真后端(`backend/`|`server/`|`api/openapi.yaml`)」+「前端 api-client(引用 `/api/...`)」= **全栈 app** → 本步为**硬门**(不过不许进 /ship)。纯前端 / 纯后端 / design-only → advisory(仍建议跑,不阻塞)。若确要跳过本地合体验证,须在 `docs/status.md` 决策日志显式写 `seam ... deferred` 理由。
+
+### 1.5.1 Boot 真后端
+
+用项目自身的启动方式把后端跑起来(qa 负责 boot,脚本只握手):
+- Python/FastAPI: `cd backend && uvicorn app.main:app --port 8000`(有 `.venv` 先 activate)
+- Node: `npm run start` / `node server.js`
+- 有 `docker-compose.yml` 且依赖 PG/Redis: `docker compose up -d` 起依赖再 boot app
+- 起不来(缺依赖/缺 env)→ 记 `seam-smoke` FAIL,**不许**假装 PASS
+
+### 1.5.2 跑三个确定性脚本(产 state JSON,闸门据此判)
+
+```bash
+BASE=http://127.0.0.1:8000     # 真后端基址
+
+# ① seam 冒烟:前端声明的 endpoint 在真后端是否都存在/可握手
+bash .claude/scripts/design-first/seam-smoke.sh --base-url "$BASE"
+#    → .claude/state/seam-smoke.json { result, backend_boot, broken:[...] }
+
+# ② 契约测试(schemathesis 打真后端,target=real,不是 mock)
+bash .claude/scripts/design-first/contract-test.sh --base-url "$BASE" --target real
+#    → .claude/state/contract-test.json { target:"real", result, failures }
+
+# ③ E2E 字段对照:真实响应字段 vs openapi/manifest 声明
+bash .claude/scripts/design-first/e2e-contract.sh --base-url "$BASE"
+#    → .claude/state/e2e-contract.json { result, missing_fields, extra_fields }
+```
+
+### 1.5.3 判定(硬门)
+
+- `seam-smoke.json`: `backend_boot=true` 且 `broken` 数 = 0 → PASS。任一前端 endpoint 在真后端 404/不可达 → **FAIL**(前端指向了后端没有的路由 = 合体断裂)
+- `contract-test.json`: `target=real` 且 `result=PASS` → PASS。**只跑 mock 不算过**(mock 证明不了真后端符合契约)
+- `e2e-contract.json`: `missing_fields` = 0 且 `extra_fields` = 0 → PASS。有 drift → 前后端字段不一致
+
+**关键:** 这三个的成败由 `app-gate.sh app-gate qa` 里的 `sg_app_seam_smoke` / `sg_app_contract_test` / `sg_app_e2e_contract_smoke` 读 state JSON 机械判。全栈 app 下它们是 `sg_run`(硬),不产 state = 缺证据 = 不过。**不许**手写 state JSON 造假(state 必须由脚本真跑产出)。
+
+### 1.5.4 前端指向真后端(人工确认放行清单)
+
+seam 脚本证明「路由存在」,但前端 build 是否真的把 base-url 指向了这个后端(而非 mock/占位)属半机械 —— 记入 `not_verified`:前端 `NEXT_PUBLIC_API_BASE` / `.env` / api-client baseURL 是否 = 真后端地址,且 mock fallback 只在后端真不可达时兜底、不静默吞真错误。
 
 ---
 
@@ -276,6 +326,9 @@ echo "{\"skill\":\"qa\",\"epoch\":$(date +%s)}" > .claude/state/skill-signal.jso
 - `multi_platform_status` 任一非 pass/deferred → send-back
 - `reviewer_walkthrough_path` 实际存在 + ≥4 文件
 - `compliance_scan_result.overall == "ready-for-submit"`
+- **(全栈 app)** `seam-smoke.json` result=PASS(后端起 + 前端 endpoint 全可达)
+- **(全栈 app)** `contract-test.json` target=real & result=PASS(mock-only 不算)
+- **(全栈 app)** `e2e-contract.json` result=PASS(前后端字段无 drift)
 
 任一不通过 → 阻塞 + 列缺失项.
 

@@ -29,7 +29,7 @@
 | A-GATE QA | `/qa` | Build 通过后自动续 | autonomous |
 | A-GATE Ship | `/ship` | QA 通过后自动续 | autonomous |
 
-初始化: `/scaffold` (一次性脚手架)。统一入口可用 `/app-factory` (读 status 自动派关)。
+初始化: `/scaffold` (一次性脚手架) → `/preflight` (环境预检:扫本机工具链+MCP → 问发布目标 → 环境约束定栈/后端,产 env-probe.json)。统一入口可用 `/app-factory` (读 status 自动派关)。
 
 > ⚙️ **执行模型**:重活各关由 AI 用 Claude 内置 **Workflow 工具**编排(推荐用户开 ultracode 模式);编排蓝图参考见 app-factory `scripts/workflows/<关>.workflow.js`。Workflow 是 Claude/ultracode 内置工具,非本项目定义;无 `claude workflow` shell 命令;未开 ultracode 时降级单 agent。
 

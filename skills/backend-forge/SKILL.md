@@ -32,11 +32,11 @@ description: "功能/契约 → 完整后端 API 服务。从 shape 数据契约
 
 1. **shape 数据契约表**(主输入):`docs/spec.md § 数据契约` 已存在,含字段 / 类型 / 单位·格式 / 生产者 / 消费方(按端)。高风险字段(金额/时间/枚举/ID)已声明单位值域。
 2. **manifest.screens[].fields**(派生输入):`docs/design/design-manifest.json` 存在,`screens[]` 含 `id / name / fields[] / inferred_entities[] / inferred_endpoints[]`,且每字段标 `confidence: "extracted" | "inferred"`。
-3. **lockdown 选定栈**(选型输入):`docs/lockdown/backend-readiness.md` 已选后端(Supabase 默认 / Firebase / PocketBase),含主体·收款资质决策。
+3. **lockdown 选定栈**(选型输入):`docs/lockdown/backend-readiness.md` 已选后端(Supabase 默认 / Cloudflare / Firebase / PocketBase),含主体·收款资质决策。选定栈**必须是 `env-probe.json.backend_options.available=true` 的**(见 `/preflight`);选了没就绪的(缺 CLI / 未授权 Supabase MCP)→ codegen 会卡在工具链缺失,先让用户装/授权。
 
 **CONTRACT 不满足时:**
 - 无数据契约表 **且** 无 manifest.screens → 拒绝执行,提示先跑 `/shape`(补数据契约)或 `/design-restore`(出 manifest)。
-- 有 manifest 但无 lockdown 选型 → **降级默认 Supabase**,在 backend-readiness.md 如实标"选型由 backend-forge 默认推断,需人确认"。
+- 有 manifest 但无 lockdown 选型 → 读 `env-probe.json`,**降级默认为"环境已就绪的最优后端"**(有 Supabase(CLI/MCP)则 Supabase;否则按矩阵在 available 候选里选,如 Cloudflare/自建),在 backend-readiness.md 如实标"选型由 backend-forge 按环境默认推断,需人确认"。
 - manifest 全字段 `confidence: inferred`(无任何 extracted)→ 不直接出 FROZEN openapi,先走 Step 1 派生草稿 + 强制人确认闸,再继续。
 - 数据契约高风险字段缺单位/值域(金额无"分/元"、时间无格式、枚举无值域)→ 阻塞,回 shape 补全后重入。
 

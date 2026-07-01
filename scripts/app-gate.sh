@@ -867,6 +867,79 @@ sg_app_e2e_contract_smoke() {
   fi
 }
 
+# ----------------------------------------------------------------------------
+# 8. sg_app_seam_smoke — 前后端合体 seam 冒烟(证明两半体真能握手)
+#    读 .claude/state/seam-smoke.json(由 scripts/design-first/seam-smoke.sh 产出):
+#      { result, backend_boot, frontend_endpoints, broken:[...], ... }
+#    两半各自绿 ≠ 合体能跑 —— trade-copilot 实战暴露的最大坑就是 seam 从没验过。
+# ----------------------------------------------------------------------------
+sg_app_seam_smoke() {
+  local ss="$ROOT/.claude/state/seam-smoke.json"
+  if [[ ! -f "$ss" ]]; then
+    echo "缺 .claude/state/seam-smoke.json (前后端合体 seam 冒烟未跑;boot 后端后跑 scripts/design-first/seam-smoke.sh --base-url <URL>)"
+    return
+  fi
+  if ! command -v jq >/dev/null 2>&1; then
+    grep -qE '"result"[[:space:]]*:[[:space:]]*"PASS"' "$ss" || { echo "seam-smoke.json 未含 result: PASS"; return; }
+    return
+  fi
+  local result boot broken_count notes
+  result=$(jq -r '.result // ""' "$ss" 2>/dev/null)
+  boot=$(jq -r '.backend_boot // false' "$ss" 2>/dev/null)
+  broken_count=$(jq -r '(.broken // []) | length' "$ss" 2>/dev/null)
+  notes=$(jq -r '.notes // ""' "$ss" 2>/dev/null)
+  [[ "$broken_count" =~ ^[0-9]+$ ]] || broken_count=0
+  if [[ "$boot" != "true" ]]; then
+    echo "seam 冒烟: 后端未起来 (backend_boot=false) — 前后端从未合体验证"
+    return
+  fi
+  if (( broken_count > 0 )); then
+    local first
+    first=$(jq -r '.broken[0] | "\(.path) → \(.status) \(.reason)"' "$ss" 2>/dev/null)
+    echo "seam 冒烟: ${broken_count} 个前端 endpoint 在真后端断裂 (首个: ${first})"
+    return
+  fi
+  if [[ -n "$result" && "$result" != "PASS" ]]; then
+    echo "seam 冒烟 result=${result} (${notes})"
+    return
+  fi
+  # PASS → 静默
+}
+
+# ----------------------------------------------------------------------------
+# _app_is_fullstack — 侦测「全栈 app」(同时有真后端 + 前端 api-client)
+#   命中 → qa 关把 seam + real-contract 升为硬门(合体能不能跑是正确性,不是风格)
+#   未命中(纯前端/纯后端/design-only)→ 维持 advisory
+#   显式豁免:status.md 决策日志含 "seam" 且 "defer"(用户主动 defer 本地合体验证)
+# ----------------------------------------------------------------------------
+_app_is_fullstack() {
+  # 显式豁免
+  if [[ -f "$ROOT/docs/status.md" ]] && grep -iqE 'seam.*defer|defer.*seam' "$ROOT/docs/status.md" 2>/dev/null; then
+    return 1
+  fi
+  # 后端信号:backend/ 目录 或 api/openapi.yaml 或 常见后端入口
+  local has_backend=false
+  if [[ -d "$ROOT/backend" || -d "$ROOT/server" || -d "$ROOT/api" ]] \
+     || [[ -f "$ROOT/api/openapi.yaml" || -f "$ROOT/api/openapi.yml" ]] \
+     || compgen -G "$ROOT/**/main.py" >/dev/null 2>&1; then
+    has_backend=true
+  fi
+  # 前端信号:frontend/ web/ app/ src/ 里有 api-client(引用 /api 路径)
+  local has_frontend=false
+  local d
+  for d in frontend web app src client; do
+    if [[ -d "$ROOT/$d" ]]; then
+      if find "$ROOT/$d" -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' -o -name '*.dart' \) \
+           -not -path '*/node_modules/*' 2>/dev/null \
+           | xargs grep -lE "['\"\`]/(api|v1)/" 2>/dev/null | grep -q .; then
+        has_frontend=true
+        break
+      fi
+    fi
+  done
+  [[ "$has_backend" == "true" && "$has_frontend" == "true" ]]
+}
+
 # ============================================================================
 # Router: cmd_app_gate <discover|lockdown|shape|build|qa|ship|scaffold>
 # (anchor 保留为 legacy alias → 自动转 discover)
@@ -950,12 +1023,24 @@ cmd_app_gate() {
     qa)
       sg_run "$(sg_app_reviewer_path)" "审核员路径产物"
       sg_run_soft "$(sg_app_multiplatform_smoke)" "多端 smoke"
-      # design-first: 保真 + 后端契约闸门,全 advisory(初期不阻塞)
+      # design-first: 保真闸门,全 advisory(初期不阻塞)
       sg_run_soft "$(sg_app_design_baseline_exists)" "设计基线 manifest + baseline PNG"
       sg_run_soft "$(sg_app_ui_visual_diff)" "UI 视觉 diff (mismatch ≤3 pass)"
       sg_run_soft "$(sg_app_design_token_match)" "design token 对账 (无硬编码/不一致)"
-      sg_run_soft "$(sg_app_contract_test)" "契约测试 PASS (mock/real)"
-      sg_run_soft "$(sg_app_e2e_contract_smoke)" "E2E 字段对照 (前后端无 drift)"
+      # 前后端 seam + 契约:全栈 app(有真后端 + 前端 api-client)→ 硬门
+      #   理由:两半各自绿 ≠ 合体能跑;合体能不能握手是「正确性」不是「风格」,
+      #   跟 build 过一样属于硬闸(trade-copilot 实战暴露的最大坑就是 seam 从没验过)。
+      #   纯前端/纯后端/design-only/显式 defer → 维持 advisory。
+      if _app_is_fullstack; then
+        echo "ℹ️  检测到全栈 app(真后端 + 前端 api-client)→ seam + real 契约升为【硬门】。" >&2
+        sg_run "$(sg_app_seam_smoke)" "前后端合体 seam 冒烟(真 HTTP 握手,后端起+endpoint 全可达)"
+        sg_run "$(sg_app_contract_test)" "契约测试 target=real PASS(schemathesis 打真后端)"
+        sg_run "$(sg_app_e2e_contract_smoke)" "E2E 字段对照(前后端响应字段无 drift)"
+      else
+        sg_run_soft "$(sg_app_seam_smoke)" "前后端合体 seam 冒烟"
+        sg_run_soft "$(sg_app_contract_test)" "契约测试 PASS (mock/real)"
+        sg_run_soft "$(sg_app_e2e_contract_smoke)" "E2E 字段对照 (前后端无 drift)"
+      fi
       ;;
     ship)
       sg_run "$(sg_app_aso_complete)" "ASO 字段 + 截图脚本"

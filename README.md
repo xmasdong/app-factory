@@ -62,12 +62,13 @@ echo 'export AI_RULES_ROOT="'$(pwd)'/app-factory"' >> ~/.zshrc && source ~/.zshr
 | 阶段 | Gate | 脊柱 skill | 插入工具 skill | 产物 |
 |---|---|---|---|---|
 | 0 初始化 | — | `scaffold` | — | app 项目骨架(hooks/模板/PROJECT_TYPE=app) |
+| 0.5 环境预检 | — | `preflight` | — | env-probe.json(本机工具链+MCP)→ 发布目标→环境约束定栈/后端 |
 | 1 探索 | Discovery | `discover` | `codex-image-bridge`(出 mockup) | 产品定位+市场调研+概念视觉+summary |
 | 🛑 TOUCH | — | _你看 mockup_ | — | 推进 / 换方向 / 暂停 |
 | 2 锚定 | Lockdown | `lockdown` | `app-store-review-survival`(合规) | 技术spike+单位经济+命名锁定+后端+合规 |
 | 3 规格 | A-GATE 1 | `shape` | `frontend-design`(设计方向) | 完整 spec(PRD挑战/多端矩阵/数据契约/任务) |
 | 4 实现 | A-GATE 2 | `build` | `frontend-design` + `polish/animate/colorize/harden`(UI 质量) | 代码+测试+commit |
-| 5 验收 | A-GATE 3 | `qa` | `audit`(无障碍/性能) + `app-store-screenshots`(截图) + `app-store-review-survival`(复扫) | 多端smoke+截图存档+审核员预演 |
+| 5 验收 | A-GATE 3 | `qa` | `audit`(无障碍/性能) + `app-store-screenshots`(截图) + `app-store-review-survival`(复扫) | 多端smoke+**前后端 seam 握手+契约真跑**+截图存档+审核员预演 |
 | 6 发布判定 | — | _generic release_ | — | release-ready |
 | 7 上架 | A-GATE 4 | `ship` | `app-store-screenshots`(商店图) + `app-store-review-survival`(终扫) + `ios-ship-cli`(真上传) | 商店材料 + TestFlight/App Store 提交 |
 
@@ -85,6 +86,8 @@ echo 'export AI_RULES_ROOT="'$(pwd)'/app-factory"' >> ~/.zshrc && source ~/.zshr
 - ✅ 3 缺口已接:UI 簇 → shape/build/qa;ios-ship-cli → ship;app-store-screenshots → qa/ship
 - 🎨 **design-first**(导入图/设计稿 → 高保真 app + 完整后端 API):新增 `design-restore`(设计→高保真app)+ `backend-forge`(功能/契约→后端API)两 skill,经 manifest + openapi 两份机读产物当桥,接进 shape/build/qa(闸门 advisory)。详见 **`ROADMAP-design-first.md`**
   - **执行模型**:这两 skill 主路径 = AI 在会话内调用 **Workflow 工具**(Claude 内置工具)做多 agent 编排;skill 用自然语言描述编排意图(扇出哪些子任务 / parallel / pipeline / 对抗验证 / loop 条件 / 各 agent 职责 / 产物落点),AI 据此**现场组合并执行 script**。`scripts/design-first/*.workflow.js` **不是传给工具运行的脚本,而是编排蓝图参考**(展示推荐扇出结构,供 AI / 人参考)。**推荐用户开 ultracode 会话模式**(让 AI 默认倾向编排,非 skill 可强制);未开 / 不便编排时降级为单 agent 顺序。**不存在 `claude workflow` shell 命令。**
+- 🧭 **preflight 环境预检**(新):`env-probe.sh` 扫本机工具链(flutter/xcode/android/node/wrangler/supabase/docker...)+ 已配置 MCP → 推导构建能力 + 后端可选项;`preflight` skill 问发布目标(全端→Flutter)→ **只推环境能真正构建/授权的栈**,没装没授权的标 `how_to_enable`(如 Supabase 需先授权 MCP)。喂 `tech-stack-decision.md` 决策矩阵 §0 环境闸。
+- 🔌 **qa 补硬门**(新):全栈 app(真后端+前端 api-client)→ `seam-smoke.sh`(真 HTTP 探测前端声明的 endpoint 在真后端是否都可握手)+ `contract-test.sh --target real` + `e2e-contract.sh` **升为硬门**——堵住"两半各自绿、合体从没跑过"的坑(trade-copilot 实战暴露)。非全栈/design-only 维持 advisory。
 - ✅ 依赖(rules/templates/hooks/scripts)全内置,无硬编码路径,clone 即用
 - 📋 详细编排 + 机械闸门 + 仓库结构:**见 `ORCHESTRATION.md`**
 

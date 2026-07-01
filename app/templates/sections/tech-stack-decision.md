@@ -1,7 +1,19 @@
 ## 技术栈决策 (TECH-STACK-DECISION)
 
-> 选型不是拍脑袋,是**能力需求驱动 + 对比矩阵 + 不确定就 spike**。
+> 选型不是拍脑袋,是**环境约束 + 能力需求驱动 + 对比矩阵 + 不确定就 spike**。
 > discover 出初选(≥2 候选),lockdown spike 验证/定稿。
+
+### 0. 环境预检约束(先跑 /preflight,再谈选型)
+
+> **地基:候选栈必须落在本机能真正构建/授权的范围内。** 推一个装不了、没授权的栈 = 让用户卡在第一步。
+
+`/preflight` 跑 `env-probe.sh` → `.claude/state/env-probe.json`,本节所有候选**先被它闸一遍**:
+
+- **前端**:`capabilities` 决定可选面 —— `build_ios_native`(xcode+swift)、`build_android_native`(Android SDK)、`build_cross_platform_flutter`(flutter+dart)、`build_web`(node)。**发布目标由用户定(全端→Flutter)**,推荐必须落在 true 的能力里;要的目标缺工具链 → 明说"装 X 或换目标",不硬选。
+- **后端**:候选池 = `env-probe.json.backend_options` 里 `available=true` 的。unavailable 的(如未装 CLI / 未授权 Supabase MCP)**列出但标 `how_to_enable`**,不当默认。
+- 环境变了(装新工具/授权新 MCP)→ 复跑 env-probe 刷新。
+
+**没跑 /preflight 就选型 = 悬空**;下面的矩阵在 env-probe 闸过的候选里评分。
 
 ### 1. 能力需求驱动(从 PLATFORM-MATRIX 倒推)
 
@@ -37,6 +49,7 @@
 ### 4. 后端选型矩阵(后端项目必填;与前端同级严谨)
 
 > 默认 Supabase,但要按**能力需求**对比,不是无脑默认。备选含 **Cloudflare(AI 基建友好)**。
+> ⚠️ **候选先过 §0 环境闸**:矩阵只在 `env-probe.json.backend_options.available=true` 的候选里评分。默认 Supabase **仅当它 available**(装了 CLI 或授权了 Supabase MCP);否则从环境已就绪的里选(如本机只有 wrangler+docker → 默认候选是 Cloudflare / 自建),并把"启用 Supabase 需装 CLI/授权 MCP"作为可选升级项告诉用户。
 
 | 维度(1-5,5 最佳) | Supabase | Cloudflare | Firebase | PocketBase |
 |---|---|---|---|---|

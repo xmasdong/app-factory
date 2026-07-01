@@ -94,6 +94,10 @@ cp "$AI_RULES_ROOT/app/rules/generic-core.md" "$PROJECT_ROOT/.claude/rules/gener
 cp "$AI_RULES_ROOT/scripts/app-gate.sh" "$PROJECT_ROOT/.claude/scripts/app-gate.sh"
 chmod +x "$PROJECT_ROOT/.claude/scripts/app-gate.sh"
 
+# ⭐ env-probe.sh 环境预检 —— /preflight 用它扫本机工具链+MCP,喂技术栈/后端决策矩阵
+cp "$AI_RULES_ROOT/scripts/env-probe.sh" "$PROJECT_ROOT/.claude/scripts/env-probe.sh"
+chmod +x "$PROJECT_ROOT/.claude/scripts/env-probe.sh"
+
 # (可选) design-first 确定性脚本 —— 走 design-first 时才需要
 if [[ -d "$AI_RULES_ROOT/scripts/design-first" ]]; then
   cp -R "$AI_RULES_ROOT/scripts/design-first" "$PROJECT_ROOT/.claude/scripts/design-first"
@@ -259,11 +263,13 @@ echo "{\"skill\":\"app-setup\",\"epoch\":$(date +%s)}" > "$PROJECT_ROOT/.claude/
 
 告诉用户:
 
-> "/scaffold 完成. 当前 A-GATE 0 未过, 不能写代码. 下一步执行 `/anchor`:
-> 1. 锁定命名 (品牌名 / 域名 / bundle id / 商店名 / IAP id)
-> 2. 锁定单位经济 (LTV / CAC / 单次成本 / 价格阶梯单调 / 反薅 ≥5)
-> 3. 跑 technical spike (最小实验验证关键假设)
-> 4. 锁定后端就绪 (账号 / 推送 / 支付 / 删号 / 演示账号)
-> 5. 跑合规扫描 (隐私 / 儿童 / 订阅披露 / EULA / 删号 / 权限文案)"
+> "/scaffold 完成. **下一步先跑 `/preflight`**(扫本机工具链+MCP → 问发布目标 → 环境约束下定栈/后端),再进 `/discover`(A-GATE 0)。
+> preflight 是为了别在真空里选栈——装了 Xcode 才推 iOS 原生、装了 flutter 且要全端才推 Flutter、Supabase 要先授权 MCP 才算可用。"
 
-`完成: /scaffold 已初始化 app 主线骨架, 下一步执行 /anchor 进入 A-GATE 0`
+**可选:scaffold 末尾直接跑一次环境预检**,让用户马上看到本机底牌:
+
+```bash
+bash "$PROJECT_ROOT/.claude/scripts/env-probe.sh"
+```
+
+`完成: /scaffold 已初始化 app 主线骨架, 下一步执行 /preflight(环境预检+定栈)→ /discover 进入 A-GATE 0`
