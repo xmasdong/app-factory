@@ -18,6 +18,8 @@
 
 详细规则: `.claude/rules/core.md` (app 主线特化) + `.claude/rules/generic-core.md` (通用兜底)。
 
+> ⭐ **判断力地基 = `.claude/rules/build-constraints.md`**(8 条透镜式通用约束 + 元则:*别走最省事的直译,别用最弱证据自证*)。它不是死清单,是给 AI 的一组自问句——建东西前、说"完成"前用它自省(或跑 `/self-correct`)。gate 是流程骨架,build-constraints 是不被写死规则框住的判断力。
+
 ## 6 个 A-GATE (按顺序)
 
 | Gate | 入口 skill | 何时跑 | 用户介入 |
@@ -116,6 +118,7 @@ app 主线最常见的灾难: bundle id / 域名 / App Store 名 / IAP product i
 - **NEVER 在 mockup 之前给"推进建议"** (决定权完全归用户)
 - **MUST autonomous 后任务链不询问用户, 除非真硬阻塞**
 - **MUST commit 自动授权** (继承 generic): app-gate.sh PASS + scope 在 FILES 内 → 直接 commit
+- **MUST 宣称"完成"前跑 `/self-correct`** (build 收尾 + qa 前): 拿 build-constraints 8 约束自省, 自纠能修的、诚实标出需真机/用户的——这是把"历史上反复被人纠正"变成"自己先纠"的那步
 
 ## 结束标记 (合规)
 

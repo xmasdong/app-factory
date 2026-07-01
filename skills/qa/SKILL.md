@@ -44,6 +44,7 @@ description: "Quality-assure the app before store submission — multi-platform 
 
 ```
 - [ ] Step 0: 验 INPUT_CONTRACT
+- [ ] Step 0.5: 跑 `/self-correct` — 拿 `app/rules/build-constraints.md` 8 约束对成品自省(证据强度/直译/以用户走全程/主次/可玩性等),自纠 + 把"需真机/用户"项带进本次 not_verified
 - [ ] Step 1: 覆盖契约对账 (核心链路全部覆盖, 不覆盖链路显式)
 - [ ] Step 1.5: 前后端 seam 握手 + 契约真跑 (全栈 app 必跑, 硬门)
 - [ ] Step 2: 多端 smoke (Multi-Platform Smoke)
