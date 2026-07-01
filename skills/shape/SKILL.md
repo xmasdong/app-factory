@@ -5,6 +5,8 @@ description: "Shape product cognition into a complete spec.md — PRD challenge 
 
 # /shape — A-GATE 1 产品认知 (app 主线)
 
+> ⚙️ **数字不是法律**:PRD 挑战 5 视角、多端矩阵行数、数据契约消费端数 等都是**常备透镜清单(起点非上限,更非配额)**:就本产品哪些真适用?每个适用的照出真实缺口没有?不适用的显式写「不涉及 + 理由」跳过,**不凑数量**;本产品有清单外的关键维度(强实时/离线优先/多租户)自己加。判断标准=另一个 AI 读完能不能不问就补齐,而非填满 N 个。真护栏照旧:每条挑战必须有主语+具体动作+具体画面(禁「同上」「通用错误处理」)、fallback 必须具体、数据契约高风险字段单位值域全列。判断力地基见 `build-constraints.md`。
+
 > 🎨 **design-first 核心**:① Step1.0 调 `design-restore` 抽取段 → `docs/design/design-manifest.json` + `tokens.json` + baseline PNG(视觉方向改为"读 manifest 体检补缺")② Step1.8 数据契约用 `manifest.screens[].fields` 做种子 ③ 新增 Step1.85 调 `backend-forge` 契约段 → `api/openapi.yaml`(SSOT)+ 越权矩阵 ④ coverage 升维三维(屏×断点×state)。**两份机读产物(manifest + openapi)= 设计↔app↔后端唯一真相源,机制消灭前后端 drift**。闸门 `sg_app_data_contract` / `sg_app_openapi_artifact`(advisory)。
 
 > 🔗 **App Factory 集成**:本关「视觉方向」调 `frontend-design` skill 定**设计系统**(配色/排版/组件基调/避 AI 通用脸),写进 spec.md「视觉方向」章节,给 /build 当 UI 实现基准。

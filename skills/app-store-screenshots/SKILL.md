@@ -7,6 +7,8 @@ description: Use when building App Store or Google Play screenshot pages, genera
 
 ## Overview
 
+> ⚙️ **设备/尺寸/语言清单 = 示例池,不是强制清单**:先声明本产品实际支持的设备类 + 目标市场语言,只对声明范围出图;下面"out of the box"的设备/尺寸是默认起点,不涉及的整块跳过(单端 iOS 游戏不必出 Android/平板;单市场不必铺满多语言)。**真护栏照旧**(平台硬约束):各商店当前要求的精确分辨率、RGB 非 RGBA、单尺寸张数上限——以商店当前提示为准。
+
 Build a Next.js page that renders App Store **and** Google Play screenshots as **advertisements** (not UI showcases) and exports them via `html-to-image` at Apple's and Google's required resolutions. Screenshots are the single most important conversion asset on both stores.
 
 Supported devices out of the box:

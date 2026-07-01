@@ -139,17 +139,24 @@ sg_app_economics_real() {
   content=$(_app_section_content "单位经济" "$file")
   [[ -z "$content" ]] && content=$(_app_section_content "ECONOMICS" "$file")
 
-  # 反薅清单计数
-  local antiabuse_count
-  antiabuse_count=$(echo "$content" | awk '/反薅|anti.?abuse/,/^##/' | grep -cE "^[[:space:]]*[-*]" 2>/dev/null) || antiabuse_count=0
-  if (( antiabuse_count < 5 )); then
-    echo "反薅漏洞清单条目数 ${antiabuse_count} < 5"
-    return
+  # 松绑:非订阅型产品(买断/免费/纯本地/ASO 引流/无变现)显式声明后放行 —— 不硬套价格阶梯+反薅。
+  # 目标是无人值守能跑完,不是逼免费游戏编订阅表。
+  if echo "$content" | grep -qiE "无变现|不变现|买断|一次性(定价|购买)|纯本地|无订阅|免费(引流|跑通|ASO)|无按次成本|无可套利|经济.{0,4}N/?A"; then
+    return   # 已声明非订阅模式,经济节按其模式即可,不卡订阅专属项
   fi
 
-  # 价格阶梯单调性 (简化: 检测有"价格阶梯"表)
-  if ! echo "$content" | grep -qE "价格阶梯|price[[:space:]]*tier"; then
-    echo "缺价格阶梯表"
+  # 以下仅对「订阅/配额型」产品生效(检测到价格阶梯才查反薅)
+  if echo "$content" | grep -qE "价格阶梯|price[[:space:]]*tier|月套|月配额|订阅价"; then
+    # 有试用/配额/订阅 → 至少要有反薅防护(数量匹配真实薅点,不再强凑 5)
+    local antiabuse_count
+    antiabuse_count=$(echo "$content" | awk '/反薅|anti.?abuse/,/^##/' | grep -cE "^[[:space:]]*[-*0-9]" 2>/dev/null) || antiabuse_count=0
+    if (( antiabuse_count < 1 )); then
+      echo "检测到订阅/配额但反薅漏洞清单为空 (有试用/配额至少堵 1 个真实薅点)"
+      return
+    fi
+  else
+    # 既未声明非订阅,又无价格阶梯 → 提示补(advisory 下不阻塞)
+    echo "经济章节未声明变现模式(订阅?买断?免费?)—— 补一句「钱从哪来」再推进"
     return
   fi
 
@@ -216,11 +223,12 @@ sg_app_platform_matrix() {
   content=$(_app_section_content "多端能力矩阵" "$file")
   [[ -z "$content" ]] && content=$(_app_section_content "PLATFORM-MATRIX" "$file")
 
-  # 表格数据行数 (排除表头和分隔行)
+  # 表格数据行数 (排除表头和分隔行)。已松绑:只要求矩阵存在 + ≥1 行真数据
+  # (声明的端 × 相关能力);不再强制凑满 8 行 —— 单端 app(iOS 游戏/PWA/手表)天然不分叉。
   local rows
   rows=$(echo "$content" | grep -E "^\|" | grep -vE "^\|[-:]+" | grep -cv "^|[[:space:]]*能力\|^|[[:space:]]*Capability" 2>/dev/null) || rows=0
-  if (( rows < 8 )); then
-    echo "多端能力矩阵表格数据行数 ${rows} < 8 (8 个能力维度)"
+  if (( rows < 1 )); then
+    echo "多端能力矩阵缺真数据行 (声明端 × 相关能力 至少 1 行;单端也要列版本兼容/核心能力)"
     return
   fi
 
@@ -1036,7 +1044,7 @@ cmd_app_gate() {
       sg_run "$(sg_app_bundle_coherence)" "bundle id 跨文件一致"
       ;;
     shape)
-      sg_run "$(sg_app_platform_matrix)" "多端能力矩阵 ≥8 行 + 无懒惰 fallback"
+      sg_run "$(sg_app_platform_matrix)" "多端能力矩阵(声明端×相关能力 ≥1 行 + 无懒惰 fallback)"
       sg_run "$(sg_app_task_platform_field)" "TASK PLATFORM 字段全填"
       # design-first: 数据契约(补实)+ openapi(仅 design-first 项目),全 advisory
       sg_run_soft "$(sg_app_data_contract)" "数据契约表 + 消费端 ≥2 + 端侧独有字段"

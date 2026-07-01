@@ -5,6 +5,8 @@ description: "Discover product viability autonomously — extract keywords, run 
 
 # /discover — Phase A 探索 (Autonomous, 不问用户)
 
+> ⚙️ **数字不是法律**:本文件里的采样阈值(≥3 平台 / ≥100 差评 / 4-6 张 mockup / 5 字段 等)都是**默认锚点**。判断标准是"够不够识别重复模式 / 讲不讲得清概念 / 有没绕开上轮死因",不是凑固定数——按本品类可上下调并说明。真护栏照旧:市场结论必须真 URL 证据(训练记忆不算)、TARGET_MARKET FROZEN、收尾 hook 字符串。判断力地基见 `build-constraints.md`。
+
 > ⚙️ **执行模型(主路径 + 降级,严格遵守)**
 >
 > **本 skill 主执行路径 = AI 用内置 Workflow 工具**(Claude Code / ultracode 自带,归 Claude,非 shell;本项目不定义、不拥有任何 workflow 运行时)。AI 按本 skill 描述的编排意图**当场组合并执行 script**(script 是 AI 现场写的,不是从本仓文件加载来跑)。编排意图的**参考蓝图**见 `scripts/workflows/discover.workflow.js`(示例扇出结构,供 AI/人参考,非可执行脚本、非传给工具运行的文件)。推荐编排形状(AI 现场据此组合,参考蓝图同上)——Frame(抽关键词 FROZEN)→ Research(sources×actions 扇出堆一手证据)→ Decide(propose→独立 red-team 对抗,证据不足回灌补一轮)→ Visualize(codex-image-bridge)→ Synthesis(completeness critic 跑确定性脚本 `app-gate.sh` 产闸门 state)。

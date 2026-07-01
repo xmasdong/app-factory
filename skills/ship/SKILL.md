@@ -6,6 +6,8 @@ description: "Ship the app to App Store / Google Play — lock ASO keywords, gen
 # /ship — A-GATE 4 上架 (app 主线核心差异)
 
 > 🔗 **App Factory 集成**:Step 3 截图调 `app-store-screenshots`(商店上架图);Step 7 合规终扫调 `app-store-review-survival`(已集成);**新增末尾步:调 `ios-ship-cli` 真上传 TestFlight/App Store**(fastlane 命令行)。本关原只备材料,集成后闭环到实际提交。
+>
+> ⚙️ **设备/语言/尺寸清单是示例池,不是强制清单**:先声明本产品实际支持的**设备类 + 目标市场语言集**,截图数量/尺寸服从"该商店该尺寸的当前硬上限"(如 iOS 单尺寸 ≤10),语言由目标市场推导。文里写死的具体尺寸/语言/张数(6.5"/iPad/各 5-10 张/≥3 语言)是默认锚点——不涉及的设备线/语言显式跳过,别为凑清单铺满。也别假设一定是原生商店:Web/PWA 的"上架"= 部署 + Web Push,不走这套。**真护栏照旧**(平台硬约束/审核拒因):≤100 字符、build number 单调递增、Rejected build 烧号、RGB 非 RGBA、不含竞品名、隐私政策 URL、以 ASC 当前提示为准。判断力地基见 `build-constraints.md`。
 
 **作用:** 把 /qa 已通过的产品包装成"商店审核可提交"状态. 关心 ASO + 商店材料 + 合规复扫 + 商店截图 — 这些是 generic /release 不覆盖的维度.
 

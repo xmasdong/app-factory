@@ -5,6 +5,8 @@ description: "Lock down all external anchors after user approval — technical s
 
 # /lockdown — Phase B 锚定 (2-touch workflow 的 TOUCH 2 之后, AUTONOMOUS)
 
+> ⚙️ **数字不是法律**:本文件的采样数(spike ≥3 假设 / 反薅 ≥5 / 命名 ≥5 候选 等)是**默认锚点**,按风险面上下调并说明依据;不适用的子步显式跳过(如免费产品的单位经济,见 economics 模板"钱从哪来"透镜)。真护栏照旧:命名跨文件一致 + 5 API 查重、价格阶梯单调、密钥不入 git、合规真扫。判断力地基见 `build-constraints.md`。
+
 > 🟢 **本 skill 推荐执行形状 = ultracode 模式下,AI 用 Claude 的内置 Workflow 工具,按本 SKILL.md 描述的编排意图现场组合 script 并执行**;`scripts/workflows/lockdown.workflow.js` 只是**编排蓝图参考**(展示推荐的五路扇出结构,供 AI/人参考,不是被传给工具运行的脚本)。本项目不拥有任何 workflow 运行时。
 > Workflow 是 Claude Code / ultracode 的**内置工具**(归 Claude);AI 在会话内现场组合 script(meta + phase + parallel/pipeline + agent({schema}))并执行——script 是 AI 当场写的,不是从本仓文件加载来跑。**不存在 `claude workflow` shell 命令,skill 也开不了用户的 ultracode 模式**——只能推荐。按蓝图做五路并行锚定 + 红队对抗复审;真 state 仍由既有确定性脚本/路径产出,闸门权威仍是 `app-gate.sh app-gate lockdown`。
 >

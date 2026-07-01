@@ -5,6 +5,8 @@ description: "功能/契约 → 完整后端 API 服务。从 shape 数据契约
 
 # /backend-forge — 功能/契约 → 完整后端 API(App Factory 真 skill)
 
+> ⚙️ **数字不是法律**:本文件的采样/质疑者数(hypothesis-max-examples 50 / N_SKEPTIC=3 / 越权用例 ≥ 矩阵行数 ×2 等)是**默认锚点**,按输入空间大小 / 规则错了的代价上下调并说明。真护栏(覆盖完整性 + 正确性)照旧:越权负向测试数 = 矩阵行数(逐行对账)、金额存整数分、枚举值域全列、每 entity 有 owner、openapi 作 SSOT。判断力地基见 `build-constraints.md`。
+
 > 🔗 **App Factory 集成**:本 skill 是 design-first 增强的后端半边,与 design-restore(设计→前端)对称。
 > - **唯一真相源**:`api/openapi.yaml`(OpenAPI 3.1,SSOT)。前端 mock(prism/msw)、各端 client SDK、后端骨架、契约测试**全从它生成**——前后端 drift 靠机制(单一真相源)消灭,不靠纪律。
 > - **不开新轨**:不进 7 关脊柱路由、不动 hook 状态机。可单跑(`/backend-forge`),也由 `shape`(派生数据契约后调本 skill 出 openapi)、`build`(后端任务实现时调)、`qa`(契约测试)内部调用。
