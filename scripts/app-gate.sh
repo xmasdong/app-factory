@@ -907,6 +907,32 @@ sg_app_seam_smoke() {
 }
 
 # ----------------------------------------------------------------------------
+# 9. sg_app_integration_test — 真实环境端到端联调证明(最强"合体能跑"证据)
+#    读 .claude/state/integration-test.json(integration-test.py 打真后端产出):
+#      { result, token_obtained, steps:[...], notes }
+#    比 seam(endpoint 存在探测)更进一步:真跑通 注册→拿 token→带 token 取受保护数据。
+# ----------------------------------------------------------------------------
+sg_app_integration_test() {
+  local it="$ROOT/.claude/state/integration-test.json"
+  if [[ ! -f "$it" ]]; then
+    echo "缺 .claude/state/integration-test.json (端到端联调未跑;stack-up 起后端后跑 integration-test.py --base-url <URL>)"
+    return
+  fi
+  if ! command -v jq >/dev/null 2>&1; then
+    grep -qE '"result"[[:space:]]*:[[:space:]]*"PASS"' "$it" || { echo "integration-test.json 未含 result: PASS"; return; }
+    return
+  fi
+  local result notes
+  result=$(jq -r '.result // ""' "$it" 2>/dev/null)
+  notes=$(jq -r '.notes // ""' "$it" 2>/dev/null)
+  if [[ "$result" != "PASS" ]]; then
+    echo "端到端联调 result=${result:-空} (${notes})"
+    return
+  fi
+  # PASS → 静默
+}
+
+# ----------------------------------------------------------------------------
 # _app_is_fullstack — 侦测「全栈 app」(同时有真后端 + 前端 api-client)
 #   命中 → qa 关把 seam + real-contract 升为硬门(合体能不能跑是正确性,不是风格)
 #   未命中(纯前端/纯后端/design-only)→ 维持 advisory
@@ -1032,12 +1058,14 @@ cmd_app_gate() {
       #   跟 build 过一样属于硬闸(trade-copilot 实战暴露的最大坑就是 seam 从没验过)。
       #   纯前端/纯后端/design-only/显式 defer → 维持 advisory。
       if _app_is_fullstack; then
-        echo "ℹ️  检测到全栈 app(真后端 + 前端 api-client)→ seam + real 契约升为【硬门】。" >&2
+        echo "ℹ️  检测到全栈 app(真后端 + 前端 api-client)→ 联调 + real 契约升为【硬门】(先 stack-up 起栈)。" >&2
         sg_run "$(sg_app_seam_smoke)" "前后端合体 seam 冒烟(真 HTTP 握手,后端起+endpoint 全可达)"
+        sg_run "$(sg_app_integration_test)" "端到端联调(真跑通 注册→拿 token→带 token 取受保护数据)"
         sg_run "$(sg_app_contract_test)" "契约测试 target=real PASS(schemathesis 打真后端)"
         sg_run "$(sg_app_e2e_contract_smoke)" "E2E 字段对照(前后端响应字段无 drift)"
       else
         sg_run_soft "$(sg_app_seam_smoke)" "前后端合体 seam 冒烟"
+        sg_run_soft "$(sg_app_integration_test)" "端到端联调"
         sg_run_soft "$(sg_app_contract_test)" "契约测试 PASS (mock/real)"
         sg_run_soft "$(sg_app_e2e_contract_smoke)" "E2E 字段对照 (前后端无 drift)"
       fi

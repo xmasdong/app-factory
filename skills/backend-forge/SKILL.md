@@ -42,6 +42,17 @@ description: "功能/契约 → 完整后端 API 服务。从 shape 数据契约
 
 **OUTPUT(桥产物 + 闸门 state):**
 - `api/openapi.yaml`(OpenAPI 3.1 SSOT)+ `api/ownership-matrix.md` + codegen 产物
+- **`api/integration-flow.json`(联调黄金流,SHOULD 产)**:qa Step 1.5 的 `integration-test.py` 优先读它跑真端到端联调(无则从 live `/openapi.json` 自动派生,可靠性略低)。格式:
+  ```json
+  { "steps": [
+    { "name":"register", "method":"POST", "path":"/api/auth/register",
+      "body":{"email":"itest@example.com","password":"Itest_x!aB9"},
+      "expect":[201], "save_token":true },
+    { "name":"list", "method":"GET", "path":"/api/positions", "auth":true, "expect":[200] }
+  ] }
+  ```
+  从 ownership 矩阵 + 核心链路挑一条"注册→鉴权→读/写自己的数据"happy-path 落成此文件 = 联调可复现的锚。
+- **`docker-compose.yml`(全栈项目 SHOULD 产)**:后端 + 依赖(PG/Redis)+ 前端一把拉起,让 `stack-up.sh` 一键起真栈联调(dev 设 SQLite/内存 KV fallback → 零外部依赖也能 boot)。
 - **闸门 JSON**(Workflow 的 Synthesis critic / 线性 Step 6 写):
   - `.claude/state/contract-test.json` = `{target, result, failures}`(夹1+夹2 汇总)
   - `.claude/state/e2e-contract.json` = `{result, missing_fields, extra_fields}`(夹3 业务链路字段对照)

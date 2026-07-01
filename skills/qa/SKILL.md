@@ -11,7 +11,7 @@ description: "Quality-assure the app before store submission — multi-platform 
 >
 > **降级:未开 ultracode 或 AI 未走多 agent 编排时**(对比是 Claude 内置 Workflow 工具现场编排 vs 单 agent 串行),单 agent 按下方 SKILL.md 原 7 步顺序串行执行,**产物与闸门 key 一字不差**:
 > - **Step 1 覆盖契约**:逐链路对账(串行逐条)。
-> - **Step 1.5 seam + 契约真跑**(全栈 app 硬门):boot 真后端 → 依次跑 `seam-smoke.sh` / `contract-test.sh --target real` / `e2e-contract.sh`,产 3 个 state JSON。单 agent 也必须跑,不因降级跳过。
+> - **Step 1.5 联调真跑**(全栈 app 硬门):`stack-up.sh` 拉起真栈 → 依次跑 `seam-smoke.sh` / `integration-test.py` / `contract-test.sh --target real` / `e2e-contract.sh`(产 4 个 state JSON)→ `stack-down.sh` 收摊。单 agent 也必须跑,不因降级跳过。
 > - **Step 2 多端 smoke**:对 PLATFORM-MATRIX 声明的端逐端跑核心链路、各端用 `ui-snapshot.sh` 截 3 viewport,deferred 端写理由。失去并行只是更慢,逻辑等价。
 > - **Step 4 反绕过 + paywall**:不开 N-skeptic,改为单 agent 自检 + **强制截图证据**(`no-bypass.png` / `paywall-full.png` / `iap-sandbox.png`)作为最强证据(本文件第 275 行已承认此步归 honor system),把"对抗"降级为"**必须有真实登录截图否则判 FAIL**"的硬证据闸门。
 > - **Step 5 合规 9 节**:逐节串行扫。
@@ -72,39 +72,55 @@ description: "Quality-assure the app before store submission — multi-platform 
 
 **适用判定:** 项目同时有「真后端(`backend/`|`server/`|`api/openapi.yaml`)」+「前端 api-client(引用 `/api/...`)」= **全栈 app** → 本步为**硬门**(不过不许进 /ship)。纯前端 / 纯后端 / design-only → advisory(仍建议跑,不阻塞)。若确要跳过本地合体验证,须在 `docs/status.md` 决策日志显式写 `seam ... deferred` 理由。
 
-### 1.5.1 Boot 真后端
+### 1.5.1 一键拉起全栈(stack-up 联调基建)
 
-用项目自身的启动方式把后端跑起来(qa 负责 boot,脚本只握手):
-- Python/FastAPI: `cd backend && uvicorn app.main:app --port 8000`(有 `.venv` 先 activate)
-- Node: `npm run start` / `node server.js`
-- 有 `docker-compose.yml` 且依赖 PG/Redis: `docker compose up -d` 起依赖再 boot app
-- 起不来(缺依赖/缺 env)→ 记 `seam-smoke` FAIL,**不许**假装 PASS
-
-### 1.5.2 跑三个确定性脚本(产 state JSON,闸门据此判)
+**别手动 boot** —— 用基建脚本一把拉起真栈(compose 优先起 PG/Redis/后端;无 compose 则按后端类型 native 起),等健康,并把**前端 env 写成指向真后端**(非 mock):
 
 ```bash
-BASE=http://127.0.0.1:8000     # 真后端基址
+# compose 有则用(真 PG/Redis);快回路/CI/无 docker → 加 --native(进程起,零基建依赖)
+bash .claude/scripts/design-first/stack-up.sh            # 或 --native --timeout 30
+#  → .claude/state/stack-up.json { method, backend_url, backend_ready, pids, ... }
+#  → 写 frontend/.env.local:NEXT_PUBLIC_API_BASE 等 = 真后端地址
+```
+
+`backend_ready=false`(超时没起)→ 联调门直接 FAIL,**不许**假装 PASS。起不来先修依赖/env(这本身就是"真实环境能不能联调"的一部分)。
+
+### 1.5.2 打真后端跑四个确定性脚本(产 state JSON,闸门据此判)
+
+```bash
+BASE=$(jq -r .backend_url .claude/state/stack-up.json)   # 真后端基址
 
 # ① seam 冒烟:前端声明的 endpoint 在真后端是否都存在/可握手
 bash .claude/scripts/design-first/seam-smoke.sh --base-url "$BASE"
-#    → .claude/state/seam-smoke.json { result, backend_boot, broken:[...] }
+#    → seam-smoke.json { result, backend_boot, broken:[...] }
 
-# ② 契约测试(schemathesis 打真后端,target=real,不是 mock)
+# ② 端到端联调(最强证据):真跑通 注册→拿 token→带 token 取受保护数据
+python3 .claude/scripts/design-first/integration-test.py --base-url "$BASE"
+#    → integration-test.json { result, token_obtained, steps:[...] }
+#    (有 api/integration-flow.json 则按黄金流跑;否则从 live /openapi.json 自动派生)
+
+# ③ 契约测试(schemathesis 打真后端,target=real,不是 mock)
 bash .claude/scripts/design-first/contract-test.sh --base-url "$BASE" --target real
-#    → .claude/state/contract-test.json { target:"real", result, failures }
+#    → contract-test.json { target:"real", result, failures }
 
-# ③ E2E 字段对照:真实响应字段 vs openapi/manifest 声明
+# ④ E2E 字段对照:真实响应字段 vs openapi/manifest 声明
 bash .claude/scripts/design-first/e2e-contract.sh --base-url "$BASE"
-#    → .claude/state/e2e-contract.json { result, missing_fields, extra_fields }
+#    → e2e-contract.json { result, missing_fields, extra_fields }
 ```
 
-### 1.5.3 判定(硬门)
+### 1.5.3 收摊 + 判定(硬门)
 
-- `seam-smoke.json`: `backend_boot=true` 且 `broken` 数 = 0 → PASS。任一前端 endpoint 在真后端 404/不可达 → **FAIL**(前端指向了后端没有的路由 = 合体断裂)
-- `contract-test.json`: `target=real` 且 `result=PASS` → PASS。**只跑 mock 不算过**(mock 证明不了真后端符合契约)
-- `e2e-contract.json`: `missing_fields` = 0 且 `extra_fields` = 0 → PASS。有 drift → 前后端字段不一致
+```bash
+bash .claude/scripts/design-first/stack-down.sh   # 联调完收摊(kill 进程 / docker compose down)
+```
 
-**关键:** 这三个的成败由 `app-gate.sh app-gate qa` 里的 `sg_app_seam_smoke` / `sg_app_contract_test` / `sg_app_e2e_contract_smoke` 读 state JSON 机械判。全栈 app 下它们是 `sg_run`(硬),不产 state = 缺证据 = 不过。**不许**手写 state JSON 造假(state 必须由脚本真跑产出)。
+- `stack-up.json`: `backend_ready=true`(栈真起来了)
+- `seam-smoke.json`: `backend_boot=true` 且 `broken`=0 → 前端每个 endpoint 在真后端可达
+- `integration-test.json`: `result=PASS`(真 HTTP 鉴权 round-trip 通)→ **这才是"联调成功"的硬证据**
+- `contract-test.json`: `target=real` 且 `result=PASS`(**mock-only 不算**)
+- `e2e-contract.json`: `missing_fields`=0 且 `extra_fields`=0
+
+**关键:** 由 `app-gate.sh app-gate qa` 的 `sg_app_seam_smoke` / `sg_app_integration_test` / `sg_app_contract_test` / `sg_app_e2e_contract_smoke` 读 state JSON 机械判。全栈 app 下它们是 `sg_run`(硬),不产 state = 缺证据 = 不过。**不许**手写 state JSON 造假(必须脚本真跑产出)。
 
 ### 1.5.4 前端指向真后端(人工确认放行清单)
 
@@ -326,7 +342,9 @@ echo "{\"skill\":\"qa\",\"epoch\":$(date +%s)}" > .claude/state/skill-signal.jso
 - `multi_platform_status` 任一非 pass/deferred → send-back
 - `reviewer_walkthrough_path` 实际存在 + ≥4 文件
 - `compliance_scan_result.overall == "ready-for-submit"`
+- **(全栈 app)** `stack-up.json` backend_ready=true(真栈拉得起来)
 - **(全栈 app)** `seam-smoke.json` result=PASS(后端起 + 前端 endpoint 全可达)
+- **(全栈 app)** `integration-test.json` result=PASS(真跑通端到端联调:注册→token→取数据)
 - **(全栈 app)** `contract-test.json` target=real & result=PASS(mock-only 不算)
 - **(全栈 app)** `e2e-contract.json` result=PASS(前后端字段无 drift)
 
