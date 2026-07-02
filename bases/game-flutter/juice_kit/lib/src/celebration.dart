@@ -76,11 +76,13 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
   @override
   Widget build(BuildContext context) {
     return IgnorePointer(
-      child: AnimatedBuilder(
-        animation: _ac,
-        builder: (context, _) => CustomPaint(
-          size: Size.infinite,
-          painter: _ac.isAnimating ? _ConfettiPainter(_particles, _ac.value) : null,
+      // SizedBox.expand:作为 Stack 非定位子级时防尺寸塌陷(qa 实证门抓到的真 bug)
+      child: SizedBox.expand(
+        child: AnimatedBuilder(
+          animation: _ac,
+          builder: (context, _) => CustomPaint(
+            painter: _ac.isAnimating ? _ConfettiPainter(_particles, _ac.value) : null,
+          ),
         ),
       ),
     );

@@ -120,11 +120,23 @@ sg_app_naming_real_evidence() {
     return
   fi
 
-  # locked 数量要求随形态:原生商店 app 有 域名/AppStore/Play/bundle 四锚可锁 → ≥4;
-  # Web/PWA-only 可锁的锚少(常只有域名),不强求 4(任何声称 locked 的仍走上面 evidence 验真护栏)。
-  if _app_is_native_store && (( locked_real < 4 )); then
-    echo "真 locked 项数 ${locked_real} < 4 (原生商店 app 至少锁 域名/AppStore/Play/bundle id;Web/PWA 不受此限)"
-    return
+  # 锚定完成度(毕业考实战修正):
+  #   核心不可逆锚 = 显示名 + bundle id → 必须真 locked(上架后不可改,没商量)
+  #   其余锚(域名/Play/IAP)= locked 或 显式 N/A(带理由) 都算已锚定;
+  #   PROPOSED(如网络断没法查域名)不算锚定但只点名不硬卡——ship 终扫必须清。
+  if _app_is_native_store; then
+    local core_missing=()
+    echo "$content" | grep -iE "(品牌名|显示名|brand)" | grep -qiE "status:[[:space:]]*locked" || core_missing+=("显示名")
+    echo "$content" | grep -iE "bundle" | grep -qiE "status:[[:space:]]*locked" || core_missing+=("bundle id")
+    if (( ${#core_missing[@]} > 0 )); then
+      echo "核心不可逆锚未 locked: ${core_missing[*]} (上架后不可改,必须先锁)"
+      return
+    fi
+    local proposed
+    proposed=$(echo "$content" | grep -ciE "status:[[:space:]]*PROPOSED" 2>/dev/null) || proposed=0
+    if (( proposed > 0 )); then
+      echo "提示: ${proposed} 项 PROPOSED(如域名待网络补验)—— 不挡工程,ship 终扫必须转 locked/N-A" >&2
+    fi
   fi
 }
 
@@ -549,7 +561,8 @@ sg_app_reviewer_path() {
   content=$(_app_section_content "后端就绪" "$ROOT/docs/spec.md" 2>/dev/null)
   [[ -z "$content" ]] && content=$(_app_section_content "BACKEND-READINESS" "$ROOT/docs/spec.md" 2>/dev/null)
 
-  if ! echo "$content" | grep -qiE "演示账号|reviewer[[:space:]]*account|sandbox[[:space:]]*account"; then
+  # 关键词对齐 qa SKILL 自己的字段名(demo_account/sandbox_apple_id/reviewer_notes_account)——毕业考抓的工厂内部不一致
+  if ! echo "$content" | grep -qiE "演示账号|demo[_ ]?account|reviewer[_ ]?(notes[_ ]?)?account|sandbox[_ ]?(apple[_ ]?id|account)"; then
     echo "后端就绪章节缺演示账号字段 (审核员路径前置)"
     return
   fi
@@ -1048,7 +1061,7 @@ sg_app_game_feel() {
     imgs=$((imgs+1))
     [[ $(wc -c <"$f" 2>/dev/null || echo 0) -lt 3072 ]] && tiny=$((tiny+1))
     base=$(basename "$f")
-    grep -rq "$base" "$ROOT/lib" "$ROOT/Sources" "$ROOT/src" "$ROOT/pubspec.yaml" "$ROOT/assets"/*manifest* 2>/dev/null || orphan=$((orphan+1))
+    grep -rq "$base" "$ROOT/lib" "$ROOT/Sources" "$ROOT/src" "$ROOT/pubspec.yaml" "$ROOT/assets" 2>/dev/null || orphan=$((orphan+1))   # assets 递归含子目录 manifest(qa 实战修:glob 看不见 assets/art/manifest.json)
   done < <({ find "$ROOT/assets" "$ROOT/images" "$ROOT/Resources" -type f \
     \( -name '*.png' -o -name '*.jpg' -o -name '*.webp' -o -name '*.svg' \) 2>/dev/null || true; })
   (( imgs < 5 )) && misses+=("美术资产仅 ${imgs} 张(<5): 应 codex 出成套(背景纹理/贴纸按钮/庆祝元素/mascot 表情)替换代码近似")
