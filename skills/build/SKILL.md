@@ -213,6 +213,13 @@ echo "{\"skill\":\"build\",\"epoch\":$(date +%s)}" > .claude/state/skill-signal.
 
 资产必须**真接线**:进 pubspec/xcassets 并被代码引用——躺在目录里不算配套。
 
+### ②0 先用基座,别重写(有 `bases/game-flutter` 时)
+
+pubspec 挂 `juice_kit`(path 依赖,见 bases/game-flutter/README),直接 import:
+`BounceButton`/`Haptics`/`CelebrationController+Overlay`/`ScorePop`/`JuicyRoute`/`JuicyTimerRing`/`EmptyState`/`ErrorRetryState`/`ResultScaffold`/`HowToScaffold`。
+资产走 `asset_station/make_assets.sh`(key art 先行+identity_qc)+ `icon_cut.sh`。
+**手写这些件 = 重新发明,违反闭环三则。** 基座缺件才自写,并评估回流。
+
 ### ② 质感 pass(手感层,重点)
 
 | 件 | 最低标准 |

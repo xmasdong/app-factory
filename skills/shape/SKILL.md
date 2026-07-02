@@ -415,7 +415,7 @@ echo "{\"skill\":\"shape\",\"epoch\":$(date +%s)}" > .claude/state/skill-signal.
 - 资产清单:本项目要出哪些图(图标/背景/按钮/庆祝件/mascot),各自风格要点
 - juice/组件选用表:用基座哪些件(有基座时)
 
-**② `lib/theme/design_feed.dart`(可执行物 —— 核心)**
+**② `lib/theme/design_feed.dart`(可执行物 —— 核心;照抄底:`bases/game-flutter/theme/design_feed_template.dart`,填 EXTRACTED 槽)**
 把 ① 的 token 直接落成主题变量代码(色板/圆角/间距/字体槽赋值)。**UI 任务最省事路径 = import 这个主题**;想硬编码裸奔反而要多写代码。非 Flutter 栈落对应形态(SwiftUI Theme struct / CSS vars)。
 
 **build 消费约定**:build Step 4 对任何 UI 任务,把 DESIGN-FEED.md + 基座组件目录注入实现上下文(开写之前,不是写完 Step 7.3 才见——7.3 保留当验收)。

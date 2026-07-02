@@ -122,6 +122,8 @@ mkdir -p "$PROJECT_ROOT/scripts"
 cp "$AI_RULES_ROOT/scripts/ai-rules.sh" "$PROJECT_ROOT/scripts/ai-rules.sh"
 chmod +x "$PROJECT_ROOT/scripts/ai-rules.sh"
 
+# ⭐ 游戏项目:提示挂基座(juice_kit path 依赖 + 资产工位),别从零写质感件
+#   见 $AI_RULES_ROOT/bases/game-flutter/README.md(pubspec: juice_kit path 依赖)
 # (可选) design-first 确定性脚本 —— 走 design-first 时才需要
 if [[ -d "$AI_RULES_ROOT/scripts/design-first" ]]; then
   cp -R "$AI_RULES_ROOT/scripts/design-first" "$PROJECT_ROOT/.claude/scripts/design-first"
