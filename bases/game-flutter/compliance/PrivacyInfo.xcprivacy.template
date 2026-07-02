@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- 隐私 manifest 模板(iOS 17+ 必需)。单机无网络游戏的最小声明:
+     无收集、无追踪;UserDefaults API 用途 = CA92.1(app 自身设置/最高分)。
+     项目若加网络/统计/第三方 SDK → 按真实情况补 NSPrivacyCollectedDataTypes。-->
+<plist version="1.0">
+<dict>
+  <key>NSPrivacyTracking</key><false/>
+  <key>NSPrivacyTrackingDomains</key><array/>
+  <key>NSPrivacyCollectedDataTypes</key><array/>
+  <key>NSPrivacyAccessedAPITypes</key>
+  <array>
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key><string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key><array><string>CA92.1</string></array>
+    </dict>
+  </array>
+</dict>
+</plist>
