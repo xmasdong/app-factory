@@ -992,6 +992,40 @@ _app_is_native_project() {
 }
 
 # ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# 11. sg_app_game_feel — 游戏质感工序的机械底线(游戏类产品)
+#     「功能完成+测试绿」只到能用;质感层(真美术资产+触感+庆祝)是游戏的半条命。
+#     只验客观件(资产数/接线/代码引用);"爽不爽"由 build 工序自玩作答。
+#     BGM 明确排除(用户价值函数)。数字是默认锚非法律。
+# ----------------------------------------------------------------------------
+_app_is_game() {
+  local c; c=$(_app_section_content "产品定位" "$ROOT/docs/spec.md" 2>/dev/null)
+  # 信号面要宽:产品可能自称"你画AI猜/谜题/对战"而不含"游戏"三个字(实战翻过车)
+  echo "$c" | grep -qiE '游戏|game|玩法|关卡|谜题|puzzle|对战|你画|猜猜|计分|score|player'
+}
+
+sg_app_game_feel() {
+  _app_is_game || return 0
+  local misses=()
+  local imgs
+  imgs=$(find "$ROOT/assets" "$ROOT/images" "$ROOT/Resources" -type f \
+    \( -name '*.png' -o -name '*.jpg' -o -name '*.webp' -o -name '*.svg' \) 2>/dev/null | wc -l | tr -d ' ')
+  (( imgs < 5 )) && misses+=("美术资产仅 ${imgs} 张(<5): 背景纹理/贴纸按钮/庆祝元素/mascot 表情集应 codex-image-bridge 出成套并替换代码近似")
+  if [[ -f "$ROOT/pubspec.yaml" ]] && ! grep -qE '^\s+assets:' "$ROOT/pubspec.yaml"; then
+    misses+=("pubspec.yaml 未声明 assets(资产躺目录不算配套)")
+  fi
+  if ! grep -rqiE 'haptic|HapticFeedback|impactOccurred|vibrat' "$ROOT/lib" "$ROOT/Sources" "$ROOT/src" 2>/dev/null; then
+    misses+=("代码无触感引用(落笔/猜对/按钮应带 haptic)")
+  fi
+  if ! grep -rqiE 'confetti|celebrat|firework|star.?burst|庆祝|彩带' "$ROOT/lib" "$ROOT/Sources" "$ROOT/src" 2>/dev/null; then
+    misses+=("代码无庆祝时刻(猜对/过关要可感知高光,非弹框)")
+  fi
+  if (( ${#misses[@]} > 0 )); then
+    printf '游戏质感缺件: %s\n' "${misses[*]}"
+    return
+  fi
+}
+
 # _app_scope_declares <regex> — spec.md 某章节内是否显式声明了某范围(用于 honor N/A)
 # 通用:很多门假设"原生商店付费 app",但产品可能是 Web/PWA、无后端、零数据。
 # 这些门应认「显式声明不涉及」为满足,而不是硬要填原生商店字段。
@@ -1137,6 +1171,10 @@ cmd_app_gate() {
       #   理由:两半各自绿 ≠ 合体能跑;合体能不能握手是「正确性」不是「风格」,
       #   跟 build 过一样属于硬闸(trade-copilot 实战暴露的最大坑就是 seam 从没验过)。
       #   纯前端/纯后端/design-only/显式 defer → 维持 advisory。
+      # 游戏类产品 → 质感底线(用户价值函数:除 BGM 外全配套,质感是重点)
+      if _app_is_game; then
+        sg_run "$(sg_app_game_feel)" "游戏质感底线(真美术资产≥5+接线+触感+庆祝;BGM 除外)"
+      fi
       # 原生 iOS/watchOS 项目 → 模拟器回路证据升硬门(build 绿 ≠ 装得上跑得起画得出)
       if _app_is_native_project; then
         echo "ℹ️  检测到原生 iOS/watchOS 项目 → 模拟器回路(ios-sim-harness)升为【硬门】。" >&2
