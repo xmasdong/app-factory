@@ -120,6 +120,8 @@ chmod +x "$PROJECT_ROOT/.claude/scripts/env-probe.sh"
 #   hook 兼容需要(历史名),工具本身通用无耦合。
 mkdir -p "$PROJECT_ROOT/scripts"
 cp "$AI_RULES_ROOT/scripts/ai-rules.sh" "$PROJECT_ROOT/scripts/ai-rules.sh"
+# ⭐ 步骤台账工具(闸门验台账;治"凭记忆复刻流程")
+cp "$AI_RULES_ROOT/scripts/skill-ledger.sh" "$PROJECT_ROOT/scripts/skill-ledger.sh"
 chmod +x "$PROJECT_ROOT/scripts/ai-rules.sh"
 
 # ⭐ 游戏项目:提示挂基座(juice_kit path 依赖 + 资产工位),别从零写质感件

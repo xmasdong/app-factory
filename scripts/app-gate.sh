@@ -1094,6 +1094,31 @@ sg_app_game_feel() {
   fi
 }
 
+# ----------------------------------------------------------------------------
+# 13. sg_app_skill_ledger <skill> — 步骤台账验收(治"凭记忆复刻流程,软工序蒸发")
+#     台账存在 → 硬验:全部 done/skip(有理由)+ 回执文件真实存在
+#     台账缺失 → 只点名(老项目兼容;新项目 CLAUDE 模板已定 MUST init)
+# ----------------------------------------------------------------------------
+sg_app_skill_ledger() {
+  local skill="$1"
+  local ledger="$ROOT/.claude/state/skill-run/$skill.json"
+  local sl=""
+  for c in "$ROOT/scripts/skill-ledger.sh" "${AI_RULES_ROOT:-/nonexistent}/scripts/skill-ledger.sh"; do
+    [[ -x "$c" ]] && { sl="$c"; break; }
+  done
+  if [[ ! -f "$ledger" ]]; then
+    echo "无 $skill 步骤台账(开跑第一动作应 skill-ledger.sh init $skill;没台账=凭记忆复刻流程的信号)"
+    return
+  fi
+  [[ -z "$sl" ]] && { echo "台账在但缺 skill-ledger.sh 工具"; return; }
+  local out
+  out=$(CLAUDE_PROJECT_DIR="$ROOT" "$sl" check "$skill" 2>/dev/null)
+  if [[ $? -ne 0 ]]; then
+    echo "$skill 台账未清: $(echo "$out" | head -3 | tr '\n' ';')"
+    return
+  fi
+}
+
 # _app_scope_declares <regex> — spec.md 某章节内是否显式声明了某范围(用于 honor N/A)
 # 通用:很多门假设"原生商店付费 app",但产品可能是 Web/PWA、无后端、零数据。
 # 这些门应认「显式声明不涉及」为满足,而不是硬要填原生商店字段。
@@ -1190,6 +1215,13 @@ cmd_app_gate() {
 
   case "$gate" in
     discover)
+      # 步骤台账:有账必清(硬);无账点名(软,老项目兼容)
+      _lg="$ROOT/.claude/state/skill-run/discover.json"
+      if [[ -f "$_lg" ]]; then
+        sg_run "$(sg_app_skill_ledger discover)" "discover 步骤台账全清(done/skip有理由/回执在)"
+      else
+        sg_run_soft "$(sg_app_skill_ledger discover)" "discover 步骤台账"
+      fi
       # Phase A: 定位 + (市场/mockup 视情况) + 决策卡口
       sg_run "$(sg_app_product_lock)" "Step 0: 产品定位 5 字段齐(有 PRD 时从 PRD 读)"
       # 市场调研 + mockup 仅「从模糊点子起 且 用户在启动第一问选了要调研」才必须;
@@ -1207,6 +1239,13 @@ cmd_app_gate() {
       sg_run "$(sg_app_discovery_summary)" "Step 0.8: discovery-summary.md 决策卡口产物"
       ;;
     lockdown)
+      # 步骤台账:有账必清(硬);无账点名(软,老项目兼容)
+      _lg="$ROOT/.claude/state/skill-run/lockdown.json"
+      if [[ -f "$_lg" ]]; then
+        sg_run "$(sg_app_skill_ledger lockdown)" "lockdown 步骤台账全清(done/skip有理由/回执在)"
+      else
+        sg_run_soft "$(sg_app_skill_ledger lockdown)" "lockdown 步骤台账"
+      fi
       # Phase B: 真验证 (AUTONOMOUS)
       sg_run "$(sg_app_spike_dual_lang_real)" "Step 2.1: 技术 spike 双语 + 真 PASS/FAIL 信号"
       sg_run "$(sg_app_economics_real)" "Step 2.2: 单位经济真数据 (无待估/约/可能)"
@@ -1218,6 +1257,13 @@ cmd_app_gate() {
       sg_run "$(sg_app_bundle_coherence)" "bundle id 跨文件一致"
       ;;
     shape)
+      # 步骤台账:有账必清(硬);无账点名(软,老项目兼容)
+      _lg="$ROOT/.claude/state/skill-run/shape.json"
+      if [[ -f "$_lg" ]]; then
+        sg_run "$(sg_app_skill_ledger shape)" "shape 步骤台账全清(done/skip有理由/回执在)"
+      else
+        sg_run_soft "$(sg_app_skill_ledger shape)" "shape 步骤台账"
+      fi
       sg_run "$(sg_app_platform_matrix)" "多端能力矩阵(声明端×相关能力 ≥1 行 + 无懒惰 fallback)"
       sg_run "$(sg_app_task_platform_field)" "TASK PLATFORM 字段全填"
       # design-first: 数据契约(补实)+ openapi(仅 design-first 项目),全 advisory
@@ -1226,9 +1272,23 @@ cmd_app_gate() {
         sg_run_soft "$(sg_app_openapi_artifact)" "openapi.yaml 3.1 合法 + 覆盖核心链路 (design-first)"
       ;;
     build)
+      # 步骤台账:有账必清(硬);无账点名(软,老项目兼容)
+      _lg="$ROOT/.claude/state/skill-run/build.json"
+      if [[ -f "$_lg" ]]; then
+        sg_run "$(sg_app_skill_ledger build)" "build 步骤台账全清(done/skip有理由/回执在)"
+      else
+        sg_run_soft "$(sg_app_skill_ledger build)" "build 步骤台账"
+      fi
       sg_run "$(sg_app_bundle_coherence)" "bundle id 一致"
       ;;
     qa)
+      # 步骤台账:有账必清(硬);无账点名(软,老项目兼容)
+      _lg="$ROOT/.claude/state/skill-run/qa.json"
+      if [[ -f "$_lg" ]]; then
+        sg_run "$(sg_app_skill_ledger qa)" "qa 步骤台账全清(done/skip有理由/回执在)"
+      else
+        sg_run_soft "$(sg_app_skill_ledger qa)" "qa 步骤台账"
+      fi
       sg_run "$(sg_app_reviewer_path)" "审核员路径产物"
       sg_run_soft "$(sg_app_multiplatform_smoke)" "多端 smoke"
       # design-first: 保真闸门,全 advisory(初期不阻塞)
@@ -1266,6 +1326,13 @@ cmd_app_gate() {
       fi
       ;;
     ship)
+      # 步骤台账:有账必清(硬);无账点名(软,老项目兼容)
+      _lg="$ROOT/.claude/state/skill-run/ship.json"
+      if [[ -f "$_lg" ]]; then
+        sg_run "$(sg_app_skill_ledger ship)" "ship 步骤台账全清(done/skip有理由/回执在)"
+      else
+        sg_run_soft "$(sg_app_skill_ledger ship)" "ship 步骤台账"
+      fi
       # M0 度量埋点:status.md 必须有度量节(每门首过率/收敛轮数/OSR 模板)——飞轮的采集端
       if ! grep -qE '^## 度量' "$ROOT/docs/status.md" 2>/dev/null; then
         sg_run "status.md 缺 ## 度量 节(每门首过率/收敛轮数/OSR 回填模板;见 status.md.tmpl)" "度量节存在"

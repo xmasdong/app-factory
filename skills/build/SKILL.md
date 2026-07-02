@@ -44,7 +44,8 @@ description: "Build one task to passing tests with PLATFORM isolation, bundle id
 - [ ] Step 6: bundle id 一致性自检 (改 Info.plist/build.gradle/package.json 时强制)
 - [ ] Step 7: 跑测试, 失败 → 最多 3 轮 fix→retest (熔断器接管)
 - [ ] Step 7.3: **质感工序**(必经:游戏走「游戏质感工序」/非游戏 app 走「App 质感工序」)——见下方两节
-- [ ] Step 7.5: 跑 `/self-correct` — 拿 `app/rules/build-constraints.md` 8 约束对本产物自省(元则:别直译省事版、别用弱证据自证),自纠能修的、诚实标出需真机/用户的。**宣称"完成"前的自 QA,不是过写死清单**
+- [ ] Step 7.4: **玩一遍/用一遍**(信第3条;不能真交互则诚实记录降级方式与覆盖缺口,禁静默降级) ⇒回执: .claude/state/playtest.md
+- [ ] Step 7.5: 跑 `/self-correct` ⇒回执: .claude/state/self-correct.json — — 拿 `app/rules/build-constraints.md` 8 约束对本产物自省(元则:别直译省事版、别用弱证据自证),自纠能修的、诚实标出需真机/用户的。**宣称"完成"前的自 QA,不是过写死清单**
 - [ ] Step 8: scope check (改动 ⊆ TASK.FILES, 受 PLATFORM 约束)
 - [ ] Step 9: 更新 status.md (任务状态 + optimistic/deferred 清单)
 - [ ] Step 10: commit
