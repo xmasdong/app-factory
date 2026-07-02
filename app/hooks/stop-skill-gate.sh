@@ -158,7 +158,7 @@ if [[ "$EXIT_CODE" -eq 0 ]]; then
     HINT=$(cat "$HINT_FILE")
     if [[ -n "$HINT" ]]; then
       log_hook "stop-skill-gate-clearance" "skill=$SKILL"
-      echo "[ai-rules clearance] /${SKILL} 机械验收通过。" >&2
+      echo "[app-factory clearance] /${SKILL} 机械验收通过。" >&2
       echo "$HINT" >&2
     fi
   fi
@@ -189,7 +189,7 @@ fi
 
 if [[ "$FUSE_EXIT" -eq 10 ]]; then
   # 软熔断 → 跳过当前任务，尝试下一个
-  FULL="[ai-rules fuse] 软熔断：当前 skill /${SKILL} 连续多次验收失败。
+  FULL="[app-factory fuse] 软熔断：当前 skill /${SKILL} 连续多次验收失败。
 跳过当前任务，标记为 fused，尝试下一个无阻塞的任务。
 在 status.md 中将当前任务标记为 [FUSED]，然后直接开始下一个任务。
 不要继续修复当前任务。"

@@ -1,7 +1,7 @@
 # ${PROJECT_NAME} — App 主线 spec
 
 > PROJECT_TYPE: app
-> 本 spec 由 ai-rules/app 主线管控, 5 个 A-GATE 顺序执行
+> 本 spec 由 app-factory/app 主线管控, 5 个 A-GATE 顺序执行
 > 通用思想 (PRD 挑战 / 故障想象力 / 数据契约 / 任务拆分) 沿用 generic spec, 见 `../../CLAUDE.md`
 
 ---
@@ -19,14 +19,14 @@
 
 ### 命名锁定 (NAMING-LOCK)
 
-> 引用模板: `ai-rules/app/templates/sections/naming-lock.md`
+> 引用模板: `app-factory/app/templates/sections/naming-lock.md`
 > AI 填实, 每项 evidence 指向 `.claude/state/evidence/<hash>.txt`
 
 <TBD: 6 项查重 + status: locked>
 
 ### 单位经济 (ECONOMICS)
 
-> 引用模板: `ai-rules/app/templates/sections/economics.md`
+> 引用模板: `app-factory/app/templates/sections/economics.md`
 
 <TBD: 单次成本表 + 价格阶梯单调 + 反薅 ≥5 条>
 
@@ -39,13 +39,13 @@
 
 ### 后端就绪 (BACKEND-READINESS)
 
-> 引用模板: `ai-rules/app/templates/sections/backend-readiness.md`
+> 引用模板: `app-factory/app/templates/sections/backend-readiness.md`
 
 <TBD: 云服务 / 支付 / 推送 / 域名 / 演示账号 checkbox>
 
 ### 合规扫描 (COMPLIANCE)
 
-> 引用模板: `ai-rules/app/templates/sections/compliance.md`
+> 引用模板: `app-factory/app/templates/sections/compliance.md`
 > 引用 skill: `app-store-review-survival`
 
 <TBD: 隐私 / 删除账号 / GDPR / ATT / Kids / 网络授权时机 / 权限文案>
@@ -91,7 +91,7 @@
 
 ### 多端能力矩阵 (PLATFORM-MATRIX) — app 主线必填
 
-> 引用模板: `ai-rules/app/templates/sections/platform-matrix.md`
+> 引用模板: `app-factory/app/templates/sections/platform-matrix.md`
 
 <TBD: 8+ 能力维度 × iOS/Android/鸿蒙/小程序/Web × fallback>
 

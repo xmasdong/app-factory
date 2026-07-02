@@ -95,19 +95,38 @@ BASE=$(jq -r .backend_url .claude/state/stack-up.json)   # 真后端基址
 bash .claude/scripts/design-first/seam-smoke.sh --base-url "$BASE"
 #    → seam-smoke.json { result, backend_boot, broken:[...] }
 
-# ② 端到端联调(最强证据):真跑通 注册→拿 token→带 token 取受保护数据
+# ② 契约测试(schemathesis 打真后端,target=real,不是 mock)
+#    ⚠️ 必须带真 token:先注册一个 throwaway 账号取 token 传 --header,
+#      否则受保护端点全 401 级联 = 一堆假失败。
+#    ⚠️ fuzz 会打到 DELETE /users/me 之类破坏性端点(把自己账号删了)——这是"真打真后端"
+#      的应有之义;所以契约测试先跑,跑完再注册新账号做后面的步骤。
+TOKEN=$(curl -s -X POST "$BASE/api/auth/register" -H 'Content-Type: application/json' \
+  -d '{"email":"fuzz@example.com","password":"Fuzz_pass!9aB"}' | jq -r .access_token)
+bash .claude/scripts/design-first/contract-test.sh --base-url "$BASE" --target real \
+  --header "Authorization: Bearer $TOKEN"
+#    → contract-test.json { target:"real", result, failures }
+
+# ③ 端到端联调(最强证据):真跑通 注册→拿 token→带 token 取受保护数据
 python3 .claude/scripts/design-first/integration-test.py --base-url "$BASE"
 #    → integration-test.json { result, token_obtained, steps:[...] }
 #    (有 api/integration-flow.json 则按黄金流跑;否则从 live /openapi.json 自动派生)
 
-# ③ 契约测试(schemathesis 打真后端,target=real,不是 mock)
-bash .claude/scripts/design-first/contract-test.sh --base-url "$BASE" --target real
-#    → contract-test.json { target:"real", result, failures }
-
-# ④ E2E 字段对照:真实响应字段 vs openapi/manifest 声明
-bash .claude/scripts/design-first/e2e-contract.sh --base-url "$BASE"
+# ④ E2E 字段对照:真实响应字段 vs openapi 声明(逐核心端点,--merge 累加)
+#    ⚠️ 列表端点先造一条真数据再对照(空数组没有 item 可比,脚本会警告跳过)。
+TOKEN2=$(curl -s -X POST "$BASE/api/auth/register" ... | jq -r .access_token)   # fuzz 后新账号
+bash .claude/scripts/design-first/e2e-contract.sh --base-url "$BASE" \
+  --method GET --path /api/users/me --request-path /api/users/me --token "$TOKEN2"
+bash .claude/scripts/design-first/e2e-contract.sh --base-url "$BASE" \
+  --method GET --path <核心列表端点> --request-path <同> --token "$TOKEN2" --merge
 #    → e2e-contract.json { result, missing_fields, extra_fields }
 ```
+
+> 💡 **契约门常见真漂移**(trade-copilot 实战 43 处收敛出的模式,修后端不改 spec——spec 是 SSOT):
+> ① 错误体:框架默认 `{detail}` vs spec `{error:{code,message}}` → 全局 exception handler 一处治
+> ② 错误码没声明:400(坏 JSON)/422(校验)→ spec 批量补声明
+> ③ 响应缺 spec 字段 / 裸数组 vs 包装对象 / Decimal 序列化成字符串(spec number)
+> ④ 该拒没拒:required 字段给了默认值、enum/长度/格式没建模、显式 null(spec 非 nullable)被 Optional 吞、bool 被 lax 转 float、未知查询参数
+> ⑤ naive datetime(SQLite 丢时区)违 RFC3339 date-time → serializer 补 UTC
 
 ### 1.5.3 收摊 + 判定(硬门)
 

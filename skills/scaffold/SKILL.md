@@ -100,6 +100,14 @@ chmod +x "$PROJECT_ROOT/.claude/scripts/app-gate.sh"
 cp "$AI_RULES_ROOT/scripts/env-probe.sh" "$PROJECT_ROOT/.claude/scripts/env-probe.sh"
 chmod +x "$PROJECT_ROOT/.claude/scripts/env-probe.sh"
 
+# ⭐ ai-rules.sh 执行工具 —— 必拷:stop-skill-gate/pre-commit-scope/post-commit-next-task/
+#   stop-politeness-guard 等 hook 都在 $PROJECT_ROOT/scripts/ai-rules.sh 找它;不拷 = 这些
+#   hook 静默退化 honor system(无人值守时机械验收整层失效)。文件名保留 ai-rules.sh 是
+#   hook 兼容需要(历史名),工具本身通用无耦合。
+mkdir -p "$PROJECT_ROOT/scripts"
+cp "$AI_RULES_ROOT/scripts/ai-rules.sh" "$PROJECT_ROOT/scripts/ai-rules.sh"
+chmod +x "$PROJECT_ROOT/scripts/ai-rules.sh"
+
 # (可选) design-first 确定性脚本 —— 走 design-first 时才需要
 if [[ -d "$AI_RULES_ROOT/scripts/design-first" ]]; then
   cp -R "$AI_RULES_ROOT/scripts/design-first" "$PROJECT_ROOT/.claude/scripts/design-first"

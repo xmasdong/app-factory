@@ -64,6 +64,8 @@ EOF
 }
 
 # ---- parse args -----------------------------------------------------------
+HEADERS=()   # 认证等自定义 header(可多个):--header 'Authorization: Bearer xxx'
+             # 没 token 跑受保护 API = 15+ 个 401 级联假失败,先注册拿真 token 再跑
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --base-url)     BASE_URL="${2:-}"; shift 2 ;;
@@ -71,6 +73,7 @@ while [[ $# -gt 0 ]]; do
     --target)       TARGET="${2:-}"; shift 2 ;;
     --max-examples) MAX_EXAMPLES="${2:-}"; shift 2 ;;
     --path)         ONLY_PATH="${2:-}"; shift 2 ;;
+    --header|-H)    HEADERS+=("${2:-}"); shift 2 ;;
     -h|--help)      usage; exit 0 ;;
     *) echo "错误: 未知参数 '$1'" >&2; usage; exit 2 ;;
   esac
@@ -132,6 +135,10 @@ if "$ST_CMD" run --help 2>/dev/null | grep -q -- '--max-examples'; then
 elif "$ST_CMD" run --help 2>/dev/null | grep -q -- '--hypothesis-max-examples'; then
   ST_ARGS+=( --hypothesis-max-examples "$MAX_EXAMPLES" )
 fi
+# 自定义 header(鉴权):schemathesis 3.x/4.x 都支持 -H
+for h in "${HEADERS[@]:-}"; do
+  [[ -n "$h" ]] && ST_ARGS+=( -H "$h" )
+done
 # 限定单 path
 if [[ -n "$ONLY_PATH" ]]; then
   if "$ST_CMD" run --help 2>/dev/null | grep -q -- '--include-path'; then

@@ -182,19 +182,30 @@ if [[ "$HTTP_CODE" != "$STATUS" ]]; then
   RESULT="FAIL"
 fi
 
-# 提取实际响应字段
+# 提取实际响应字段(对象取 keys;数组取首元素 keys —— 列表端点声明的是 item 字段)
+EMPTY_ARRAY=0
 if jq -e . "$BODY_FILE" >/dev/null 2>&1; then
   ACTUAL="$(jq -r --arg p "$RESP_POINTER" '
       (try ('"$RESP_POINTER"') catch .) as $obj
       | ($obj // {})
-      | if type=="object" then (keys_unsorted[]) else empty end' \
+      | if type=="object" then (keys_unsorted[])
+        elif type=="array" and length>0 then (.[0] | if type=="object" then keys_unsorted[] else empty end)
+        else empty end' \
       "$BODY_FILE" 2>/dev/null | sort -u || true)"
+  if jq -e --arg p "$RESP_POINTER" '(try ('"$RESP_POINTER"') catch .) | type=="array" and length==0' "$BODY_FILE" >/dev/null 2>&1; then
+    EMPTY_ARRAY=1
+    echo "警告: 响应为空数组, 无 item 可对照 → 本 endpoint 跳过字段对照(先造一条真数据再跑才有效)" >&2
+  fi
 else
   echo "警告: 响应非合法 JSON" >&2
   RESULT="FAIL"
 fi
 
 # ---- 计算 missing / extra --------------------------------------------------
+# 空数组响应:没有 item 可对照 → 两侧清空(不判漂移,警告已在上面给出)
+if [[ "$EMPTY_ARRAY" == "1" ]]; then
+  DECLARED=""; ACTUAL=""
+fi
 DECLARED_SORTED="$(printf '%s\n' "$DECLARED" | sed '/^$/d' | sort -u)"
 ACTUAL_SORTED="$(printf '%s\n' "$ACTUAL" | sed '/^$/d' | sort -u)"
 
