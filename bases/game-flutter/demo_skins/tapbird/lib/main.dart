@@ -189,16 +189,21 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                 ),
               ),
             ),
-            // 小鸟(mascot 资产)
-            LayoutBuilder(
-              builder: (context, c) => AnimatedPositioned(
-                duration: const Duration(milliseconds: 16),
-                left: c.maxWidth * birdX - 28,
-                top: c.maxHeight * birdY - 28,
-                child: Transform.rotate(
-                  angle: (vy * 0.6).clamp(-0.5, 0.8),
-                  child: Image.asset('assets/art/mascot-idle.png', width: 56, height: 56,
-                      errorBuilder: (c, e, s) => const Icon(Icons.flutter_dash, size: 48)),
+            // 小鸟(mascot 资产)—— Positioned 必须是 Stack 直接子级(test 抓的真布局 bug)
+            Positioned.fill(
+              child: LayoutBuilder(
+                builder: (context, c) => Stack(
+                  children: [
+                    Positioned(
+                      left: c.maxWidth * birdX - 28,
+                      top: c.maxHeight * birdY - 28,
+                      child: Transform.rotate(
+                        angle: (vy * 0.6).clamp(-0.5, 0.8),
+                        child: Image.asset('assets/art/mascot-idle.png', width: 56, height: 56,
+                            errorBuilder: (c, e, s) => const Icon(Icons.flutter_dash, size: 48)),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

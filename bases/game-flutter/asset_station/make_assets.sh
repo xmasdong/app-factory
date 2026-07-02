@@ -35,20 +35,31 @@ if [[ ! -s "$KEY" ]]; then
     || { echo "key art 生成失败" >&2; exit 1; }
 fi
 
+# 幂等:已存在且非空 → 跳过(export SKIP_EXISTING=0 强制重出)
+skip_if_exists() { [[ "${SKIP_EXISTING:-1}" == "1" && -s "$1" ]]; }
+
 # ② 成套(全部带 key art 参考)+ ③ identity_qc autoretry
+# 透明类资产铁律:别信 prompt 的"transparent background"——模型常把棋盘格画进图里(假透明)。
+# 正解:纯品红底(#FF00FF,远离常用配色)生成 → keyout 键控成真 alpha(同目录 Swift 工具)。
+MAGENTA="isolated on a single flat solid pure magenta background (#FF00FF), no checkerboard, no other elements"
 declare -a SPECS=(
   "icon-master.png|App icon, ${STYLE}. Single centered subject, bold silhouette readable at 60px, bright saturated FULL background, no alpha, no text."
   "bg-texture.png|Background texture, ${STYLE}. Subtle low-contrast so UI reads on top, portrait phone."
-  "celebration-set.png|Celebration stickers on transparent background, ${STYLE}: stars, trophy, confetti pieces, matching palette."
-  "mascot-idle.png|The same mascot as reference, ${STYLE}, neutral idle pose, transparent background, same identity."
-  "mascot-celebrate.png|The same mascot as reference, ${STYLE}, cheering celebrating pose, transparent background, same identity."
-  "mascot-sad.png|The same mascot as reference, ${STYLE}, sad oops pose, transparent background, same identity."
+  "celebration-set.png@KEY|Celebration sticker set, ${STYLE}: stars, trophy, confetti pieces, sparse arrangement, ${MAGENTA}."
+  "mascot-idle.png@KEY|The same mascot as reference, ${STYLE}, neutral idle pose, same identity, ${MAGENTA}."
+  "mascot-celebrate.png@KEY|The same mascot as reference, ${STYLE}, cheering celebrating pose arms up, same identity, ${MAGENTA}."
+  "mascot-sad.png@KEY|The same mascot as reference, ${STYLE}, sad oops drooping pose, same identity, ${MAGENTA}."
 )
+KEYOUT="$(dirname "$0")/keyout"
 MANIFEST="$ART/manifest.json"
 echo '{"style":"'"${STYLE//\"/\\\"}"'","key_art":"key-art.png","assets":[' > "$MANIFEST"
 first=1
 for spec in "${SPECS[@]}"; do
-  out="$ART/${spec%%|*}"; prompt="${spec#*|}"
+  name="${spec%%|*}"; prompt="${spec#*|}"
+  needkey=0; [[ "$name" == *@KEY ]] && { needkey=1; name="${name%@KEY}"; }
+  out="$ART/$name"
+  if skip_if_exists "$out"; then echo "[asset] skip(已存在): $name" >&2; \
+    { [[ $first == 0 ]] && echo ',' >> "$MANIFEST"; first=0; printf '{"file":"%s"}' "$name" >> "$MANIFEST"; }; continue; fi
   for try in 1 2 3; do
     echo "[asset] ${spec%%|*} (try $try)…" >&2
     gen "$out" "$prompt" "$KEY" || continue
@@ -59,9 +70,16 @@ for spec in "${SPECS[@]}"; do
     [[ "$QC" == "NO" ]] && { echo "[asset] identity_qc 不过,重出" >&2; continue; }
     break
   done
-  [[ -s "$out" ]] || { echo "[asset] ✗ ${spec%%|*} 三次未产出" >&2; exit 1; }
+  [[ -s "$out" ]] || { echo "[asset] ✗ $name 三次未产出" >&2; exit 1; }
+  if [[ $needkey == 1 ]]; then
+    if [[ -x "$KEYOUT" ]]; then
+      "$KEYOUT" "$out" "$out.tmp.png" && mv "$out.tmp.png" "$out" && echo "[asset] keyout ✓ $name" >&2
+    else
+      echo "[asset] ⚠️ 缺 keyout 工具(swiftc keyout.swift -o keyout),$name 仍是品红底" >&2
+    fi
+  fi
   [[ $first == 0 ]] && echo ',' >> "$MANIFEST"; first=0
-  printf '{"file":"%s"}' "${spec%%|*}" >> "$MANIFEST"
+  printf '{"file":"%s"}' "$name" >> "$MANIFEST"
 done
 echo ']}' >> "$MANIFEST"
 echo "[asset] ✓ 成套完成 → $ART(记得:pubspec 声明 assets/ + 代码引用,躺目录不算配套)" >&2
