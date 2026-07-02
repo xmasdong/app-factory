@@ -103,7 +103,8 @@ app 主线最常见的灾难: bundle id / 域名 / App Store 名 / IAP product i
 | "改商店名 / 改 bundle id / 改价格" (已 locked 后) | **拒绝**, 回 /lockdown 重新锁定, 不在 /build 吸收 |
 | "推进" / "go" / "继续" (discover 后) | hook 自动写 AUTONOMOUS=true, AI 立即进 /lockdown |
 | "换方向" | hook 把 mockup 存进 discarded-concepts, AI 回 /discover Step 0 |
-| autonomous 中遇真硬阻塞 (合规拒因 / 不可逆) | 收尾 "等你: <具体阻塞>", 等用户决定 |
+| autonomous 中遇真硬阻塞 (不可逆操作 / 需用户签字的大注) | 收尾 "等你: <具体阻塞>", 等用户决定 |
+| 合规预审发现拒因风险 | **不停线**:记进 status.md COMPLIANCE-RISKS 清单 + 继续产出;ship 提审前终扫必须清零(合规后置,产出优先) |
 
 ## 输出模板
 

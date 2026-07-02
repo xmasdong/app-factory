@@ -5,6 +5,8 @@ description: "Lock down all external anchors after user approval — technical s
 
 # /lockdown — Phase B 锚定 (2-touch workflow 的 TOUCH 2 之后, AUTONOMOUS)
 
+> ⚙️ **合规后置(产出优先)**:本关的合规扫描是**情报性预审**——发现拒因风险记 `status.md COMPLIANCE-RISKS` 清单,**不停线继续产出**;硬校验点在 /ship 提审前(终扫清零)。前置扫的意义只是"早知道",不是"先过关"。
+
 > ⚙️ **数字不是法律**:本文件的采样数(spike ≥3 假设 / 反薅 ≥5 / 命名 ≥5 候选 等)是**默认锚点**,按风险面上下调并说明依据;不适用的子步显式跳过(如免费产品的单位经济,见 economics 模板"钱从哪来"透镜)。真护栏照旧:命名跨文件一致 + 5 API 查重、价格阶梯单调、密钥不入 git、合规真扫。判断力地基见 `build-constraints.md`。
 
 > 🟢 **本 skill 推荐执行形状 = ultracode 模式下,AI 用 Claude 的内置 Workflow 工具,按本 SKILL.md 描述的编排意图现场组合 script 并执行**;`scripts/workflows/lockdown.workflow.js` 只是**编排蓝图参考**(展示推荐的五路扇出结构,供 AI/人参考,不是被传给工具运行的脚本)。本项目不拥有任何 workflow 运行时。

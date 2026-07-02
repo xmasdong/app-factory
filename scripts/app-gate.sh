@@ -1110,7 +1110,9 @@ cmd_app_gate() {
       sg_run "$(sg_app_economics_real)" "Step 2.2: 单位经济真数据 (无待估/约/可能)"
       sg_run "$(sg_app_naming_real_evidence)" "Step 2.3: 命名锁定真 evidence 文件落盘"
       sg_run "$(sg_app_backend_real_status)" "Step 2.4: 后端就绪真值或显式 deferred"
-      sg_run "$(sg_app_compliance_real_scan)" "Step 2.5: 合规真扫 + app-store-review-survival PASS"
+      # 合规后置(用户价值函数:产出优先)——lockdown 阶段只当【情报】:标风险清单不阻塞生产;
+      # 真正硬校验点 = ship 提审前(那才是不可逆点),见 ship 分支 sg_run 合规复扫。
+      sg_run_soft "$(sg_app_compliance_real_scan)" "Step 2.5: 合规预审(情报性,不挡产出;硬闸在 ship)"
       sg_run "$(sg_app_bundle_coherence)" "bundle id 跨文件一致"
       ;;
     shape)
