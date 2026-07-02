@@ -1,0 +1,13 @@
+name: genre_turn_based
+description: "回合制 genre 插件(app-factory 游戏基座):出题→行动→判定(可异步)→结算→下一轮 的通用回合机。反抽自首款回合制游戏,n=1 谨慎泛化——第二款回合制接入时再校准。"
+version: 0.1.0
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.24.0"
+dependencies:
+  flutter:
+    sdk: flutter
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
