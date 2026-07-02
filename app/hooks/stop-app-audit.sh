@@ -30,6 +30,23 @@ fi
 # App Factory: 默认「建议模式」(尊重各人开发流程,不硬锁)
 # 闸门默认只给建议、不阻塞。要硬闸门(CI / 严格自用):export APP_FACTORY_MODE=strict
 # ============================================================================
+# ============================================================================
+# M2 兜底(自收敛 loop 的最后一道;主 loop 在 qa SKILL 会话内部,不靠 hook 多轮):
+# qa-loop.json 存在 且 converged=false 且 status.md 未标「草稿交付」→ block 一次,
+# 提醒 AI 要么继续收敛要么诚实降级打包。尊重 stop_hook_active(只拦一次不循环)。
+# ============================================================================
+QL="$ROOT/.claude/state/qa-loop.json"
+if [[ -f "$QL" ]] && command -v jq >/dev/null 2>&1; then
+  _conv=$(jq -r '.converged // true' "$QL" 2>/dev/null)
+  if [[ "$_conv" == "false" ]] && ! grep -q '草稿交付' "$ROOT/docs/status.md" 2>/dev/null; then
+    _INPUT=$(cat 2>/dev/null || true)
+    if ! printf '%s' "$_INPUT" | grep -q '"stop_hook_active":true'; then
+      echo "[stop-app-audit] qa 自收敛未完成(converged=false)且未按「草稿交付」打包 open_items —— 要么回 qa loop 继续,要么诚实降级交付。" >&2
+      exit 2
+    fi
+  fi
+fi
+
 if [[ "${APP_FACTORY_MODE:-advisory}" != "strict" ]]; then
   emit_blocked() {
     echo "[app-factory] 💡 建议(不阻塞;export APP_FACTORY_MODE=strict 开硬闸门):" >&2

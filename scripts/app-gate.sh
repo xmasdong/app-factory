@@ -1041,10 +1041,31 @@ _app_is_game() {
 sg_app_game_feel() {
   _app_is_game || return 0
   local misses=()
-  local imgs
-  imgs=$({ find "$ROOT/assets" "$ROOT/images" "$ROOT/Resources" -type f \
-    \( -name '*.png' -o -name '*.jpg' -o -name '*.webp' -o -name '*.svg' \) 2>/dev/null || true; } | wc -l | tr -d ' ')
-  (( imgs < 5 )) && misses+=("美术资产仅 ${imgs} 张(<5): 背景纹理/贴纸按钮/庆祝元素/mascot 表情集应 codex-image-bridge 出成套并替换代码近似")
+  # ① 资产实证(防 Goodhart 凑数图):≥5 张 + 每张 >3KB + 在代码/manifest 里被引用
+  local imgs=0 tiny=0 orphan=0 f base
+  while IFS= read -r f; do
+    [[ -n "$f" ]] || continue
+    imgs=$((imgs+1))
+    [[ $(wc -c <"$f" 2>/dev/null || echo 0) -lt 3072 ]] && tiny=$((tiny+1))
+    base=$(basename "$f")
+    grep -rq "$base" "$ROOT/lib" "$ROOT/Sources" "$ROOT/src" "$ROOT/pubspec.yaml" "$ROOT/assets"/*manifest* 2>/dev/null || orphan=$((orphan+1))
+  done < <({ find "$ROOT/assets" "$ROOT/images" "$ROOT/Resources" -type f \
+    \( -name '*.png' -o -name '*.jpg' -o -name '*.webp' -o -name '*.svg' \) 2>/dev/null || true; })
+  (( imgs < 5 )) && misses+=("美术资产仅 ${imgs} 张(<5): 应 codex 出成套(背景纹理/贴纸按钮/庆祝元素/mascot 表情)替换代码近似")
+  (( tiny > 0 )) && misses+=("${tiny} 张资产 <3KB(疑占位/凑数图)")
+  (( orphan > imgs / 2 )) && misses+=("${orphan}/${imgs} 张资产未被代码或 manifest 引用(躺目录不算配套)")
+  # ①b VLM 实证证据(qa 自收敛 loop 产;grep 代理挡不住无人值守 Goodhart)
+  local vr="$ROOT/.claude/state/verify-report.json"
+  if command -v jq >/dev/null 2>&1 && [[ -f "$vr" ]]; then
+    local cele style
+    cele=$(jq -r '.game_feel_evidence.celebration_visible // ""' "$vr" 2>/dev/null)
+    style=$(jq -r '.game_feel_evidence.style_consistent // ""' "$vr" 2>/dev/null)
+    [[ "$cele" == "FAIL" ]] && misses+=("VLM 判定:结算/猜对截图看不到庆祝元素")
+    [[ "$style" == "FAIL" ]] && misses+=("VLM 判定:资产成套风格不一致(key art 参考重出)")
+    [[ -z "$cele" ]] && misses+=("缺 VLM 庆祝证据(qa 工序:sim 截图喂 codex 判 celebration_visible 写 verify-report)")
+  else
+    misses+=("缺 verify-report.json 的 game_feel_evidence(VLM 实证;grep 只算底线)")
+  fi
   if [[ -f "$ROOT/pubspec.yaml" ]] && ! grep -qE '^\s+assets:' "$ROOT/pubspec.yaml"; then
     misses+=("pubspec.yaml 未声明 assets(资产躺目录不算配套)")
   fi

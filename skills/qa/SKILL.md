@@ -356,6 +356,42 @@ echo "{\"skill\":\"qa\",\"epoch\":$(date +%s)}" > .claude/state/skill-signal.jso
 
 ---
 
+## 自收敛 loop(杠杆③:内部多轮,外部一次)
+
+> **架构定死:loop 在本 skill 会话内部跑,不靠 Stop-hook 多轮回灌**(hook 的 stop_hook_active 防循环机制使回灌天然封顶 1 轮——那条路是幻觉)。Stop hook 只保留最后兜底。
+
+**流程**(strict 模式默认;advisory 下跑一轮只报告):
+
+```
+for round in 1..3:
+  跑 bash .claude/scripts/app-gate.sh app-gate qa
+  全绿 → 写 qa-loop.json {converged:true, rounds} → 出 loop,继续 ship
+  有失败 → 查下方映射表逐门补做 → 修复 diff 摘要记入 open_items 附录 → 重验
+熔断(3 轮未收敛)→ 交付等级降「草稿交付」:打包已收敛部分 + open_items 清单,诚实收尾
+```
+
+- 轮数/首过记 `.claude/state/qa-loop.json`:`{rounds, converged, per_gate_first_pass:{...}, env_retries}`(文件态,防 compaction 丢;同步回填 status.md ## 度量)
+- **环境故障 ≠ 门失败**:codex 限流/模拟器 flaky/网络抽风 → 重试,`env_retries`+1,**不计收敛轮**
+- **禁止**为过门做表面功夫(凑数图/不接线 import/手写 state)——门已实证化会抓,且那是「完成拉力」本体,见 build-constraints 内观笔记
+
+**失败 → 修复映射表**:
+
+| 门失败 | 自动补做 |
+|---|---|
+| game_feel / product_feel | 资产工位出缺件 + **接线**(pubspec/manifest/代码引用)+ juice 补 → 产 VLM 证据重验 |
+| contract-test(real) | 按漂移五大模式速查修后端 → 重跑 schemathesis |
+| seam / integration | stack-up 重起 + 按 broken 清单修 api-client/路由 → 重跑 |
+| native_run | 读 native-run.json 的 step(build/install/launch/screenshot)对症 |
+| reviewer_path / aso / 度量节 | 补产对应材料 |
+
+**VLM 实证工序(game_feel_evidence 怎么产)**:
+1. `ios-sim-harness.sh --shots 3` 拿运行中截图(含触发一次猜对/结算的画面,可加 `--launch-wait` 或 XCUITest 驱动)
+2. 截图喂 `codex-image-bridge`(VLM 问答):"这张结算/庆祝画面里有可见的庆祝元素(彩带/星星/mascot 反应)吗?" → `celebration_visible: PASS/FAIL`
+3. 全套资产图 + DESIGN-FEED 色板喂 VLM:"这些图属于同一款游戏的同一美术风格吗?" → `style_consistent: PASS/FAIL`
+4. 写进 `verify-report.json.game_feel_evidence`(gate 读这里;**必须真跑产出,禁手写**)
+
+---
+
 ## OUTPUT_GATE 硬要求
 
 - verify-report.json 存在 + decision 合法
