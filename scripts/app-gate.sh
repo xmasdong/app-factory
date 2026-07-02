@@ -1232,6 +1232,12 @@ cmd_app_gate() {
       fi
       ;;
     ship)
+      # M0 度量埋点:status.md 必须有度量节(每门首过率/收敛轮数/OSR 模板)——飞轮的采集端
+      if ! grep -qE '^## 度量' "$ROOT/docs/status.md" 2>/dev/null; then
+        sg_run "status.md 缺 ## 度量 节(每门首过率/收敛轮数/OSR 回填模板;见 status.md.tmpl)" "度量节存在"
+      else
+        sg_run "" "度量节存在(OSR 交付后回填)"
+      fi
       sg_run "$(sg_app_aso_complete)" "ASO 字段 + 截图脚本"
       sg_run "$(sg_app_compliance_real_scan)" "合规复扫"
       ;;

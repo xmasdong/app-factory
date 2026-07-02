@@ -16,6 +16,7 @@ description: Unified entry / router for the App Factory app-dev pipeline. Reads 
 ## 路由逻辑
 
 1. 读 `docs/status.md` 顶部 `PROJECT_TYPE` + `CURRENT_GATE`(文件不存在 → 视为新项目)
+   - ⭐ 开新项目时顺手问一句:上一款交付的项目 OSR 回填了吗?(status.md ## 度量;没回填=飞轮断供——门的失败模式反哺基座全靠这几个数)
 2. 按下表派活,**派之前先列**:当前在哪关 + 下一步一句话
 
 | 状态 | 派给 | 说明 |

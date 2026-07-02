@@ -159,10 +159,11 @@ chmod +x "$PROJECT_ROOT/.claude/hooks/"*.sh
 
 ## Step 5: 注册 hook
 
-如项目无 `.claude/settings.json`, 创建:
+如项目无 `.claude/settings.json`, 创建(⭐ **app 项目注入 `APP_FACTORY_MODE=strict`**:无人值守自收敛 loop 的前提是硬闸;advisory 只给建议不阻塞,回灌无从谈起。工厂仓自身/非 app 项目维持 advisory):
 
 ```json
 {
+  "env": { "APP_FACTORY_MODE": "strict" },
   "hooks": {
     "PreToolUse": [
       {
