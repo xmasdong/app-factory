@@ -993,6 +993,40 @@ _app_is_native_project() {
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
+# 12. sg_app_product_feel — 非游戏 app 的质感底线(「CRUD 绿」≠「像上架产品」)
+#     只验客观件:图标/空状态/错误重试/暗色(或显式声明)/微动效引用。
+#     "像不像上架产品"由 build 工序以新用户身份走一遍作答。数字是默认锚非法律。
+# ----------------------------------------------------------------------------
+sg_app_product_feel() {
+  _app_is_game && return 0   # 游戏走 sg_app_game_feel
+  local misses=()
+  # 注意 pipefail:find 对不存在目录 exit 1 会毒化整条管道(即使 grep 命中)→ 全部 || true 豁免
+  if ! { { find "$ROOT/assets" -iname '*icon*' -type f 2>/dev/null || true; } | grep -q . \
+      || { find "$ROOT" -maxdepth 4 -path '*AppIcon.appiconset*' -name '*.png' 2>/dev/null || true; } | grep -q . \
+      || { find "$ROOT/public" "$ROOT/web" "$ROOT/frontend/public" -iname '*icon*' -type f 2>/dev/null || true; } | grep -q .; }; then
+    misses+=("无 app 图标资产(codex 出图标+启动屏;AppStore 图标无 alpha)")
+  fi
+  local CODE=("$ROOT/lib" "$ROOT/Sources" "$ROOT/src" "$ROOT/app" "$ROOT/frontend" "$ROOT/components")
+  if ! grep -rqiE 'empty.?state|EmptyView|暂无|无数据|placeholder' "${CODE[@]}" 2>/dev/null; then
+    misses+=("无空状态处理(空状态=插画+引导+行动按钮,不是白屏)")
+  fi
+  if ! grep -rqiE 'retry|重试|try.?again' "${CODE[@]}" 2>/dev/null; then
+    misses+=("错误处理无重试(错误=人话+可重试,禁裸错误码)")
+  fi
+  if ! grep -rqiE 'dark(Theme|Mode)?|ColorScheme\.dark|prefers-color-scheme|colorScheme' "${CODE[@]}" 2>/dev/null \
+     && ! grep -qiE '仅亮色|仅暗色|light.?only|dark.?only' "$ROOT/docs/spec.md" 2>/dev/null; then
+    misses+=("无暗色适配且 spec 未声明单色调理由")
+  fi
+  if ! grep -rqiE 'animat|transition|Hero\(|curve|spring' "${CODE[@]}" 2>/dev/null; then
+    misses+=("无微动效引用(过渡/按压反馈,禁硬切)")
+  fi
+  if (( ${#misses[@]} > 0 )); then
+    printf 'App 质感缺件: %s\n' "${misses[*]}"
+    return
+  fi
+}
+
+# ----------------------------------------------------------------------------
 # 11. sg_app_game_feel — 游戏质感工序的机械底线(游戏类产品)
 #     「功能完成+测试绿」只到能用;质感层(真美术资产+触感+庆祝)是游戏的半条命。
 #     只验客观件(资产数/接线/代码引用);"爽不爽"由 build 工序自玩作答。
@@ -1008,8 +1042,8 @@ sg_app_game_feel() {
   _app_is_game || return 0
   local misses=()
   local imgs
-  imgs=$(find "$ROOT/assets" "$ROOT/images" "$ROOT/Resources" -type f \
-    \( -name '*.png' -o -name '*.jpg' -o -name '*.webp' -o -name '*.svg' \) 2>/dev/null | wc -l | tr -d ' ')
+  imgs=$({ find "$ROOT/assets" "$ROOT/images" "$ROOT/Resources" -type f \
+    \( -name '*.png' -o -name '*.jpg' -o -name '*.webp' -o -name '*.svg' \) 2>/dev/null || true; } | wc -l | tr -d ' ')
   (( imgs < 5 )) && misses+=("美术资产仅 ${imgs} 张(<5): 背景纹理/贴纸按钮/庆祝元素/mascot 表情集应 codex-image-bridge 出成套并替换代码近似")
   if [[ -f "$ROOT/pubspec.yaml" ]] && ! grep -qE '^\s+assets:' "$ROOT/pubspec.yaml"; then
     misses+=("pubspec.yaml 未声明 assets(资产躺目录不算配套)")
@@ -1171,9 +1205,11 @@ cmd_app_gate() {
       #   理由:两半各自绿 ≠ 合体能跑;合体能不能握手是「正确性」不是「风格」,
       #   跟 build 过一样属于硬闸(trade-copilot 实战暴露的最大坑就是 seam 从没验过)。
       #   纯前端/纯后端/design-only/显式 defer → 维持 advisory。
-      # 游戏类产品 → 质感底线(用户价值函数:除 BGM 外全配套,质感是重点)
+      # 质感底线(用户价值函数:除 BGM 外全配套,质感是重点)——游戏/app 各走各的
       if _app_is_game; then
         sg_run "$(sg_app_game_feel)" "游戏质感底线(真美术资产≥5+接线+触感+庆祝;BGM 除外)"
+      else
+        sg_run "$(sg_app_product_feel)" "App 质感底线(图标+空状态+错误重试+暗色声明+微动效)"
       fi
       # 原生 iOS/watchOS 项目 → 模拟器回路证据升硬门(build 绿 ≠ 装得上跑得起画得出)
       if _app_is_native_project; then

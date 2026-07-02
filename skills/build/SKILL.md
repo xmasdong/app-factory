@@ -43,7 +43,7 @@ description: "Build one task to passing tests with PLATFORM isolation, bundle id
 - [ ] Step 5: 写测试 (单元 + 集成; stabilizing 起含 E2E)
 - [ ] Step 6: bundle id 一致性自检 (改 Info.plist/build.gradle/package.json 时强制)
 - [ ] Step 7: 跑测试, 失败 → 最多 3 轮 fix→retest (熔断器接管)
-- [ ] Step 7.3: **游戏质感工序**(游戏类产品必经;非游戏跳过)——见下方「游戏质感工序」节
+- [ ] Step 7.3: **质感工序**(必经:游戏走「游戏质感工序」/非游戏 app 走「App 质感工序」)——见下方两节
 - [ ] Step 7.5: 跑 `/self-correct` — 拿 `app/rules/build-constraints.md` 8 约束对本产物自省(元则:别直译省事版、别用弱证据自证),自纠能修的、诚实标出需真机/用户的。**宣称"完成"前的自 QA,不是过写死清单**
 - [ ] Step 8: scope check (改动 ⊆ TASK.FILES, 受 PLATFORM 约束)
 - [ ] Step 9: 更新 status.md (任务状态 + optimistic/deferred 清单)
@@ -220,6 +220,36 @@ echo "{\"skill\":\"build\",\"epoch\":$(date +%s)}" > .claude/state/skill-signal.
 ### ③ 收尾判据(不是清单,是那封信第 3 条)
 
 以真实玩家身份**完整玩一局**(模拟器/真机),问自己:"爽了没?哪一步感觉廉价?"感觉廉价的地方 = 质感缺口,回 ①/② 补。机械底线由 `sg_app_game_feel` 验(资产数/图标/触感与庆祝代码引用);"爽"由你诚实作答,写进 self-correct findings。
+
+---
+
+## App 质感工序(非游戏 app 必经)
+
+> 游戏有游戏的半条命,app 有 app 的:**「CRUD 全绿」到「像个上架产品」之间隔着一整层**。默认 Material/Cupertino 裸奔 + 转圈 loading + 空白空状态 + 开发者语言报错 = 用户一眼"糙"。工厂武器全在库里(frontend-design/polish/animate/onboard/harden/clarify + codex-image-bridge),本工序把它们串成必经。
+
+### ① 视觉系统 pass
+
+- **设计 token 先行**(色板/字阶/圆角/间距/阴影成体系,禁散落硬编码)——调 `frontend-design`(或已有 DESIGN.md/tokens 就对齐它)
+- **App 图标 + 启动屏**(codex 出;AppStore 图标无 alpha)
+- **禁默认控件裸奔**:关键界面必须有品牌感(哪怕只是统一的圆角+主色+留白节奏)
+
+### ② 状态完备 pass(app 质感的照妖镜)
+
+| 状态 | 最低标准 |
+|---|---|
+| **空状态** | 带插画/图标 + 一句引导 + 行动按钮——不是白屏或"暂无数据" |
+| **加载** | 骨架屏(skeleton)优先,禁全屏转圈 |
+| **错误** | 人话 + **可重试**——不是抛错误码;网络错和业务错分开说 |
+| 离线/弱网 | 核心读路径有缓存兜底或明确提示 |
+| **首次使用** | onboarding/引导到第一次价值(调 `onboard`)——新用户 30 秒内明白这 app 干嘛 |
+
+### ③ 微交互 pass
+
+按压反馈(视觉+触感)、页面过渡(禁硬切)、列表项进场、下拉刷新;**暗色模式**适配(或 spec 显式声明"仅亮色/仅暗色 + 理由")。文案过一遍 `clarify`:界面上不许出现开发者语言(如 "request failed: 500")。
+
+### ④ 收尾判据
+
+以**全新用户**身份从安装后第一屏走完核心路径:"顺不顺?哪里像半成品?"像半成品的地方 = 缺件,回 ①②③ 补。机械底线由 `sg_app_product_feel` 验(图标/空状态/错误重试/暗色声明/动效引用);"像不像上架产品"由你诚实作答,写进 self-correct findings。
 
 ---
 
