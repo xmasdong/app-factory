@@ -1,0 +1,11 @@
+name: juice_kit
+description: "游戏质感件(app-factory 基座层):按压回弹/触感分级/庆祝系统/过渡/计时/SFX 槽。零重依赖(confetti 自绘)。BGM 不做(价值函数)。"
+version: 0.1.0
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.24.0"
+dependencies:
+  flutter:
+    sdk: flutter
+dev_dependencies:
+  flutter_lints: ^5.0.0
