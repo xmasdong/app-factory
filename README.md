@@ -27,18 +27,25 @@
 
 ## 安装 / 使用
 
-**前置**:[Claude Code](https://claude.com/claude-code)(skill 机制依赖它)。skill 内容中文为主。
+**前置**:
+- [Claude Code](https://claude.com/claude-code)(skill 机制依赖它)。skill 内容中文为主。
+- **`jq`**(必需,机械闸门/脚本大量使用):`brew install jq`
+- 按需(用到对应能力才装):`schemathesis`(全栈契约测试,`pip install schemathesis`)· Docker(compose 起真栈联调)· Xcode(iOS/watchOS 模拟器回路)· Flutter/Android SDK(对应端构建)。**不确定装什么 → 先跑 `/preflight`,它会扫你机器并告诉你缺什么、怎么装。**
 
 ```bash
 # 1. clone
 git clone git@github.com:xmasdong/app-factory.git
 
-# 2. 让 Claude Code 发现 skill —— 软链进个人 skill 目录(所有项目可用)
-ln -s "$(pwd)/app-factory/skills/"* ~/.claude/skills/
-#    (或拷贝;或软链到 <某项目>/.claude/skills/ 做项目级)
+# 2. 让 Claude Code 发现 skill —— 二选一:
+#    a) 项目级(推荐,避免 build/qa/ship/polish 等通用名撞你已有的全局 skill):
+mkdir -p <你的新app目录>/.claude/skills
+ln -s "$(pwd)/app-factory/skills/"* <你的新app目录>/.claude/skills/
+#    b) 全局(所有项目可用;注意本仓有 24 个通用名 skill,会覆盖/混入你的全局目录):
+# ln -s "$(pwd)/app-factory/skills/"* ~/.claude/skills/
 
-# 3. 设运行依赖 —— scaffold 从这里拷模板/规则/hooks 到新项目
-echo 'export AI_RULES_ROOT="'$(pwd)'/app-factory"' >> ~/.zshrc && source ~/.zshrc
+# 3.(可选)export AI_RULES_ROOT —— 不设也行:scaffold 会从 skill 软链自动反推仓路径;
+#    只有"拷贝安装(非软链)"才必须设:
+# echo 'export AI_RULES_ROOT="'$(pwd)'/app-factory"' >> ~/.zshrc && source ~/.zshrc
 ```
 
 **用**:

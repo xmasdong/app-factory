@@ -69,7 +69,21 @@ description: "Scaffold a new app-track project — copy spec/status templates, i
 ## Step 3: 复制模板到项目
 
 ```bash
-# 假设 PROJECT_ROOT = 目标项目根, AI_RULES_ROOT = app-factory 仓库根(clone 路径,export AI_RULES_ROOT 指它)
+# PROJECT_ROOT = 目标项目根;AI_RULES_ROOT = app-factory 仓库根。
+# ⭐ Step 0(开箱兜底):用户没 export AI_RULES_ROOT 时,从 skill 软链自动反推仓路径——
+#   安装时 skills/* 被软链进 ~/.claude/skills/,readlink 回去就是仓。推不出才要求用户设。
+if [[ -z "${AI_RULES_ROOT:-}" || ! -d "${AI_RULES_ROOT:-}/app/templates" ]]; then
+  for _cand in "$PROJECT_ROOT/.claude/skills/scaffold" "./.claude/skills/scaffold" "$HOME/.claude/skills/scaffold"; do
+    _lnk="$(readlink "$_cand" 2>/dev/null)" || continue
+    [[ -n "$_lnk" ]] || continue
+    _root="$(cd "$(dirname "$_lnk")/.." 2>/dev/null && pwd)"
+    [[ -d "$_root/app/templates" ]] && { AI_RULES_ROOT="$_root"; break; }
+  done
+fi
+if [[ -z "${AI_RULES_ROOT:-}" || ! -d "$AI_RULES_ROOT/app/templates" ]]; then
+  echo "❌ 找不到 app-factory 仓:请 export AI_RULES_ROOT=<clone路径>(见仓 README 安装第3步),或确认 skills 已软链进 ~/.claude/skills/" >&2
+  # AI:把上面这句原样告诉用户并停住,不要在错误路径上继续 cp
+fi
 
 mkdir -p "$PROJECT_ROOT/docs"
 mkdir -p "$PROJECT_ROOT/.claude/hooks"
