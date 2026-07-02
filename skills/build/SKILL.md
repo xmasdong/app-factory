@@ -78,6 +78,13 @@ description: "Build one task to passing tests with PLATFORM isolation, bundle id
 
 ## Step 4: 实现规则 (核心)
 
+### UI 任务先投料(杠杆②,开写之前)
+
+任何 UI/视觉任务动手前,先把这两样读进上下文:
+1. `docs/DESIGN-FEED.md`(色板/风格基因/资产清单)+ `lib/theme/design_feed.dart`(主题变量,实现**只准引用它**,禁散落硬编码色值)
+2. 基座组件目录(有基座时):juice 件/状态屏能 import 的不重写
+缺 DESIGN-FEED → 回 shape 补产,不裸写 UI。**质感要求在生成时就位,Step 7.3 只做验收**——先裸奔再返工 = 已被实证的反模式。
+
 ### Mock/Stub (生产代码路径)
 
 `.claude/rules/core.md § 禁止模式` 和硬规则 11/12 要求:

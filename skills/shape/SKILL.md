@@ -24,6 +24,8 @@ description: "Shape product cognition into a complete spec.md — PRD challenge 
 - PROJECT_TYPE 不是 app → 提示走 generic 主线
 - CURRENT_GATE ≠ A-GATE 1 → 提示走对应 gate
 
+**OUTPUT 追加(UI/游戏类)→ `docs/DESIGN-FEED.md` + `lib/theme/design_feed.dart`(或对应栈的主题变量文件)**
+
 **OUTPUT → `docs/spec.md` 完整 + `.claude/state/clearance-shape.json` + skill-signal.json**
 
 参照 `.claude/rules/core.md § A-GATE 1` (复用项) 和 `.claude/rules/core.md § 决策生命周期` (optimistic/confirmed/deferred/invalidated/fused 状态).
@@ -68,6 +70,7 @@ Synthesis  (单 agent = 唯一写 state 口) — 汇编完整 spec.md + 跑 app-
 - [ ] Step 1: 全局认知 (产品定义 / 用户故事 / 不做清单 / 视觉方向)
 - [ ] Step 1.5: PRD 挑战 (5 视角)
 - [ ] Step 1.6: 故障想象力 (维度枚举 + 对账)
+- [ ] Step 1.65: **产 DESIGN-FEED(投料单,UI/游戏类必产)**——见下方「DESIGN-FEED」节
 - [ ] Step 1.7: 多端能力矩阵 PLATFORM-MATRIX (app 特有)
 - [ ] Step 1.8: 数据契约 (多端消费方 + 端侧独有字段)
 - [ ] Step 1.9: 核心难点识别 ([CRITICAL] 模块)
@@ -164,7 +167,7 @@ Synthesis  (单 agent = 唯一写 state 口) — 汇编完整 spec.md + 跑 app-
 
 1. 复制模板: `cat "$AI_RULES_ROOT/app/templates/sections/platform-matrix.md" >> docs/spec.md`
 
-2. 对照模板填 8 行能力维度. **不允许 `<TBD>`** (除非该行明确"本项目不涉及"):
+2. 对照模板按「声明端 × 真分叉能力」填行(单端可很少;下面 8 类是示例透镜池非配额)。**声明相关的轴不允许 `<TBD>`**;不涉及的显式写「不涉及」:
    - 抠图 / 人脸 / AR / 视觉算子
    - 推送 (即时下发)
    - 支付 / 订阅
@@ -184,7 +187,7 @@ Synthesis  (单 agent = 唯一写 state 口) — 汇编完整 spec.md + 跑 app-
 5. **跨端一致性 FROZEN 决策** 必须列: 哪些维度各端必须一致 (数据格式/价格阶梯/核心功能可用性) / 哪些允许差异 (UI 风格遵循平台 HIG / 推送 payload 结构).
 
 ### 验收硬规则 (sg_app_platform_matrix)
-- 章节存在 + 矩阵行 ≥8 + 每行 fallback 非空且不含一刀切语 + "不支持的端"显式 + 跨端一致性 FROZEN 子章节存在
+- 章节存在 + ≥1 行真数据(声明端×相关能力;已去僵化,单端不凑 8)+ 每行 fallback 非空且不含一刀切语 + "不支持的端"显式 + 跨端一致性子章节存在(单端写"无跨端问题"也算)
 
 ---
 
@@ -397,6 +400,25 @@ echo "{\"skill\":\"shape\",\"epoch\":$(date +%s)}" > .claude/state/skill-signal.
 任一失败 → 阻塞 + 列缺失项. 5 分钟去重防死循环.
 
 ---
+
+## DESIGN-FEED(投料单 —— 杠杆②:让最省事的路径 = 对的路径)
+
+> **定位钉死:投料(prompt-feed),不是对账契约。** 明文禁止把 AI 生成的 mockup 接进 ui-diff/token-match 像素硬门——AI 图的假文案/幻觉布局会把实现往「像素复刻幻觉」上逼。视觉验收走质感门(实证版)+ VLM 建议档。
+>
+> **为什么要可执行物**:把要求写进 prompt 已被实证打脸(质感规则齐备照样裸奔)。真正改变生成分布的是:**对的做法成为最省事的做法**。
+
+产两份:
+
+**① `docs/DESIGN-FEED.md`(人读 + 喂 build 生成上下文)**
+- 机器提取段(标 extracted):从用户拍板的 mockup 提色板/圆角(design-restore 抽取段现成可调)
+- VLM 风格基因段(标 inferred):字体气质/纹理关键词/情绪词(如「蜡笔/纸纹/贴纸/圆胖」)
+- 资产清单:本项目要出哪些图(图标/背景/按钮/庆祝件/mascot),各自风格要点
+- juice/组件选用表:用基座哪些件(有基座时)
+
+**② `lib/theme/design_feed.dart`(可执行物 —— 核心)**
+把 ① 的 token 直接落成主题变量代码(色板/圆角/间距/字体槽赋值)。**UI 任务最省事路径 = import 这个主题**;想硬编码裸奔反而要多写代码。非 Flutter 栈落对应形态(SwiftUI Theme struct / CSS vars)。
+
+**build 消费约定**:build Step 4 对任何 UI 任务,把 DESIGN-FEED.md + 基座组件目录注入实现上下文(开写之前,不是写完 Step 7.3 才见——7.3 保留当验收)。
 
 ## 完成后下一步
 
