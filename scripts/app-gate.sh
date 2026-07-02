@@ -957,6 +957,41 @@ sg_app_integration_test() {
 #   未命中(纯前端/纯后端/design-only)→ 维持 advisory
 #   显式豁免:status.md 决策日志含 "seam" 且 "defer"(用户主动 defer 本地合体验证)
 # ----------------------------------------------------------------------------
+# 10. sg_app_native_run — 原生模拟器回路证据(编译→boot→install→launch→截图)
+#     读 .claude/state/native-run.json(ios-sim-harness.sh 产出)。
+#     「build 绿」只证编译过;这个证明 app 在模拟器上真装得上、跑得起、画得出。
+# ----------------------------------------------------------------------------
+sg_app_native_run() {
+  local nr="$ROOT/.claude/state/native-run.json"
+  if [[ ! -f "$nr" ]]; then
+    echo "缺 .claude/state/native-run.json (原生模拟器回路未跑;跑 scripts/design-first/ios-sim-harness.sh --project <xcodeproj> --scheme <名> [--platform watchos])"
+    return
+  fi
+  if ! command -v jq >/dev/null 2>&1; then
+    grep -qE '"result"[[:space:]]*:[[:space:]]*"PASS"' "$nr" || { echo "native-run.json 未含 result: PASS"; return; }
+    return
+  fi
+  local result step notes shots
+  result=$(jq -r '.result // ""' "$nr" 2>/dev/null)
+  step=$(jq -r '.step // ""' "$nr" 2>/dev/null)
+  shots=$(jq -r '(.screenshots // []) | length' "$nr" 2>/dev/null)
+  notes=$(jq -r '.notes // ""' "$nr" 2>/dev/null)
+  if [[ "$result" != "PASS" ]]; then
+    echo "原生模拟器回路 result=${result:-空} 卡在 ${step:-?} (${notes})"
+    return
+  fi
+  [[ "$shots" =~ ^[0-9]+$ && "$shots" -ge 1 ]] || { echo "native-run PASS 但无截图证据"; return; }
+}
+
+# _app_is_native_project — 项目里有 xcodeproj/xcworkspace = 原生 iOS/watchOS 项目
+_app_is_native_project() {
+  compgen -G "$ROOT/*.xcodeproj" >/dev/null 2>&1 \
+    || compgen -G "$ROOT/*/*.xcodeproj" >/dev/null 2>&1 \
+    || compgen -G "$ROOT/*.xcworkspace" >/dev/null 2>&1 \
+    || compgen -G "$ROOT/ios/*.xcodeproj" >/dev/null 2>&1
+}
+
+# ----------------------------------------------------------------------------
 # _app_scope_declares <regex> — spec.md 某章节内是否显式声明了某范围(用于 honor N/A)
 # 通用:很多门假设"原生商店付费 app",但产品可能是 Web/PWA、无后端、零数据。
 # 这些门应认「显式声明不涉及」为满足,而不是硬要填原生商店字段。
@@ -1098,6 +1133,13 @@ cmd_app_gate() {
       #   理由:两半各自绿 ≠ 合体能跑;合体能不能握手是「正确性」不是「风格」,
       #   跟 build 过一样属于硬闸(trade-copilot 实战暴露的最大坑就是 seam 从没验过)。
       #   纯前端/纯后端/design-only/显式 defer → 维持 advisory。
+      # 原生 iOS/watchOS 项目 → 模拟器回路证据升硬门(build 绿 ≠ 装得上跑得起画得出)
+      if _app_is_native_project; then
+        echo "ℹ️  检测到原生 iOS/watchOS 项目 → 模拟器回路(ios-sim-harness)升为【硬门】。" >&2
+        sg_run "$(sg_app_native_run)" "原生模拟器回路(编译→boot→install→launch→截图 全链)"
+      else
+        sg_run_soft "$(sg_app_native_run)" "原生模拟器回路"
+      fi
       if _app_is_fullstack; then
         echo "ℹ️  检测到全栈 app(真后端 + 前端 api-client)→ 联调 + real 契约升为【硬门】(先 stack-up 起栈)。" >&2
         sg_run "$(sg_app_seam_smoke)" "前后端合体 seam 冒烟(真 HTTP 握手,后端起+endpoint 全可达)"

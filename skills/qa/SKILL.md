@@ -154,7 +154,7 @@ seam 脚本证明「路由存在」,但前端 build 是否真的把 base-url 指
 
 | 端 | 跑什么 | 工具 | 必填? |
 |----|--------|------|-------|
-| iOS | 真机/模拟器跑完核心链路, 截图 | XCUITest / Detox / Maestro / 手动 | 矩阵声明则必填 |
+| iOS/watchOS | **先跑 `ios-sim-harness.sh`**(xcodebuild→simctl boot→install→launch→截图, 全 CLI 产 native-run.json = 硬门证据;手表游戏 `--platform watchos`, iOS 侧常是 watch-only shell 装不上 iPhone)再按需 XCUITest 跑交互链路 | `.claude/scripts/design-first/ios-sim-harness.sh` + XCUITest | **原生项目硬门**(sg_app_native_run) |
 | Android | 真机/模拟器跑完核心链路, 截图 | Espresso / Detox / Maestro / 手动 | 矩阵声明则必填 |
 | 鸿蒙 | DevEco Studio + 真机 | hvigor + 手动 | 矩阵声明则必填 |
 | 小程序 | 微信开发者工具 / 真机预览 | miniprogram-automator + 手动 | 矩阵声明则必填 |
