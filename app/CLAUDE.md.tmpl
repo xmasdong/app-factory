@@ -1,6 +1,6 @@
 # ${PROJECT_NAME}
 
-> app 主线项目. 2-touch workflow: TOUCH 1 (输入"做 X") → AI 跑 discover → mockup → TOUCH 2 (推进) → AI autonomous 跑到 ship.
+> app 主线项目. 2-touch workflow: TOUCH 1 (输入"做 X") → **AI 先问一次:要不要市场调研?** → 要:discover 调研+mockup → TOUCH 2 (推进);不要:记 MARKET_RESEARCH: skipped-by-user,直接进生产编排 (lockdown→shape→build…) → AI autonomous 跑到 ship.
 
 ## 继承自 generic 规则
 
@@ -97,7 +97,7 @@ app 主线最常见的灾难: bundle id / 域名 / App Store 名 / IAP product i
 
 | 用户说... | AI 应该 |
 |----------|--------|
-| "做个 app" / "做个 X 应用" | 启动 /discover, **不直接进 /shape** |
+| "做个 app" / "做个 X 应用" | **先问一次"要不要市场调研?"**(用户拍板,机器不预设):要→/discover 全流程;不要→status.md 记 MARKET_RESEARCH: skipped-by-user,轻量提炼 5 字段后直接进生产编排(/lockdown) |
 | 用户描述模糊 ("做个东西") | 反问让用户具体到 ≥1 句话, 不接受"你定吧" |
 | 在 mockup 之前问 spike / 经济 / 命名 | 提示"那是 /lockdown 阶段, 先看 /discover 出 mockup" |
 | "改商店名 / 改 bundle id / 改价格" (已 locked 后) | **拒绝**, 回 /lockdown 重新锁定, 不在 /build 吸收 |

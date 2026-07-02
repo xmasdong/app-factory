@@ -3,7 +3,15 @@ name: discover
 description: "Discover product viability autonomously — extract keywords, run market research, AI decides 5 fields based on evidence, produce mockup, write summary. Hard stop at TOUCH 2 (user reviews mockup). Phase A of app track 2-touch workflow."
 ---
 
-# /discover — Phase A 探索 (Autonomous, 不问用户)
+# /discover — Phase A 探索 (Autonomous;唯一例外=启动第一问)
+
+> ⭐ **启动第一问(收到"做 X"后的第一个动作,先于一切调研)**:问用户一次——
+> **「要不要先做市场调研?」**(附一句各选项含义:调研=先验证需求/竞品再建,直接建=跳过验证马上进生产编排)
+> - **要** → 走本 skill 完整流程(调研 → 自决 5 字段 → mockup → hard stop)
+> - **不要** → 在 `docs/status.md` 决策清单记 `MARKET_RESEARCH: skipped-by-user (日期)`,跳过调研与 mockup,只从用户一句话提炼产品定位 5 字段写进轻量 `discovery-summary.md`(给用户过目的"我理解的产品+待确认点"),然后**直接进入生产编排**(/lockdown → /shape → /build …)。闸门自动配合不报缺。
+> - 用户已带 PRD/设计稿 → 走下方对应旁路,这一问也可省(产品已定义)。
+>
+> **为什么问**:调研要不要做是**用户的钱和时间的取舍**,不是机器该替用户预设的(授权边界)。机器的义务是把两条路的代价说清,然后执行用户的选择。这一问之后,恢复 Autonomous:中间不再问任何字段。
 
 > ⚙️ **数字不是法律**:本文件里的采样阈值(≥3 平台 / ≥100 差评 / 4-6 张 mockup / 5 字段 等)都是**默认锚点**。判断标准是"够不够识别重复模式 / 讲不讲得清概念 / 有没绕开上轮死因",不是凑固定数——按本品类可上下调并说明。真护栏照旧:市场结论必须真 URL 证据(训练记忆不算)、TARGET_MARKET FROZEN、收尾 hook 字符串。判断力地基见 `build-constraints.md`。
 

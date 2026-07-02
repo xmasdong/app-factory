@@ -20,7 +20,7 @@ description: Unified entry / router for the App Factory app-dev pipeline. Reads 
 
 | 状态 | 派给 | 说明 |
 |---|---|---|
-| 无 status.md / 空目录 | `scaffold` → `preflight` → `discover` | 从头:初始化骨架 + 环境预检定栈 + 选品 |
+| 无 status.md / 空目录 | `scaffold` → `preflight` → **问一次"要不要市场调研?"** → 要:`discover`;不要:记 skipped 直接 `lockdown` | 从头;调研与否是用户的取舍,机器只把两条路代价说清 |
 | `PROJECT_TYPE: design-first`(已有设计稿) | `scaffold` → `preflight` → `discover`(轻量旁路)→ shape 调 `design-restore`+`backend-forge` | 导入图/设计稿→高保真app+后端API,见 `ROADMAP-design-first.md` |
 | 无 `.claude/state/env-probe.json`(还没定栈) | `preflight`(扫工具链+MCP → 问发布目标 → 环境约束定栈/后端) | 别在真空选栈:装了才推,没授权标 how_to_enable |
 | `PROJECT_TYPE` ≠ app | 提示走 generic 轨(setup/spec/impl/check/verify/release) | 非 app 项目 |

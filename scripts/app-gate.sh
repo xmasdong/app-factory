@@ -1090,13 +1090,15 @@ cmd_app_gate() {
     discover)
       # Phase A: 定位 + (市场/mockup 视情况) + 决策卡口
       sg_run "$(sg_app_product_lock)" "Step 0: 产品定位 5 字段齐(有 PRD 时从 PRD 读)"
-      # 市场调研 + mockup 仅「从模糊点子起」才必须;有 PRD / 设计稿 / 明确产品定义 → 可选(不强制、不报缺)
+      # 市场调研 + mockup 仅「从模糊点子起 且 用户在启动第一问选了要调研」才必须;
+      # 有 PRD / 设计稿 / 用户选跳过(status.md 记 MARKET_RESEARCH: skipped-by-user)→ 可选(不强制、不报缺)
       if compgen -G "$ROOT/docs/PRD*" >/dev/null 2>&1 || compgen -G "$ROOT/docs/prd*" >/dev/null 2>&1 \
          || [[ -f "$ROOT/docs/design/design-manifest.json" ]] \
-         || [[ "$(_app_get_status_field PROJECT_TYPE)" == "design-first" ]]; then
-        echo "ℹ️  检测到 PRD/设计稿/明确产品定义 → 市场调研 + mockup 视为【可选】(产品已定义,不强制、不报缺)。需要时仍可手动跑。" >&2
+         || [[ "$(_app_get_status_field PROJECT_TYPE)" == "design-first" ]] \
+         || grep -qiE 'MARKET_RESEARCH:[[:space:]]*(skip|no\b|不做|跳过|用户跳过)' "$ROOT/docs/status.md" 2>/dev/null; then
+        echo "ℹ️  检测到 PRD/设计稿/用户选择跳过调研 → 市场调研 + mockup 视为【可选】(不强制、不报缺)。需要时仍可手动跑。" >&2
       else
-        # 从模糊点子起步:市场验证 + mockup 是核心,必跑
+        # 从模糊点子起步且用户要验证:市场调研 + mockup 必跑
         sg_run "$(sg_app_market_evidence)" "Step 0.5: 市场调研 5 子节 + 反方 ≥3"
         sg_run "$(sg_app_visual_artifact)" "Step 0.7: 概念视觉 mockup"
       fi
