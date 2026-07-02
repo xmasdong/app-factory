@@ -14,11 +14,16 @@ mkdir -p "$ART"
 CLI="$BRIDGE/scripts/cli.mjs"
 [[ -f "$CLI" ]] || { echo "缺 codex-image-bridge: $CLI" >&2; exit 1; }
 
-gen() { # gen <out> <prompt> [ref_image]
+gen() { # gen <out> <prompt> [ref_image] —— edit(参考图)慢易超时:给 5min + 失败降级纯 generate
   local out="$1" prompt="$2" ref="${3:-}"
-  local args=(generate --prompt "$prompt" --out "$out")
-  [[ -n "$ref" ]] && args=(edit --image "$ref" --prompt "$prompt" --out "$out")
-  (cd "$BRIDGE" && node "$CLI" "${args[@]}") >/dev/null 2>&1
+  if [[ -n "$ref" ]]; then
+    (cd "$BRIDGE" && node "$CLI" edit --image "$ref" --prompt "$prompt" \
+       --timeout-ms 300000 --out "$out") >/dev/null 2>&1
+    [[ -s "$out" ]] && return 0
+    echo "[asset]   edit 超时/失败 → 降级 generate(风格靠 prompt+QC 兜底)" >&2
+    prompt="$prompt (STYLE MUST MATCH: ${STYLE})"
+  fi
+  (cd "$BRIDGE" && node "$CLI" generate --prompt "$prompt" --timeout-ms 300000 --out "$out") >/dev/null 2>&1
   [[ -s "$out" ]]
 }
 

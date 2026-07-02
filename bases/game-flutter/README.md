@@ -1,7 +1,7 @@
 # bases/game-flutter — 游戏基座(v0 = 玩法无关层)
 
 > ROADMAP-oneshot M3 产物。**范围声明:v0 只覆盖 Flutter widget-tree 游戏;Flame/canvas 实时族 out-of-scope。**
-> 状态:juice_kit + asset_station 已到位(本篇);状态屏/合规预置/回合制 genre 插件 = M4(等首款游戏交付后反抽)。
+> 状态:juice_kit(质感件+状态屏件,tests 绿)+ asset_station + compliance 预置 + theme 模板 + **genre_turn_based 回合机插件**(反抽自首款回合制,tests 绿)+ **demo_skins/tapbird 换皮验证**(实时类,待用户签字)。
 
 ## juice_kit(local package,`flutter analyze` 零告警)
 
@@ -35,3 +35,12 @@ bases/game-flutter/asset_station/icon_cut.sh <项目根>/assets/art/icon-master.
 ```
 产出:key-art / icon 母图 / 背景纹理 / 庆祝贴纸 / mascot×3 表情 + manifest.json。
 **接线才算配套**:pubspec 声明 + 代码引用(`sg_app_game_feel` 会验)。
+
+## genre_turn_based(回合制插件,local package)
+
+`RoundMachine<P>`:idle→playing→resolving(可异步)→result→ended;`PromptPool` 接口(词/关卡/题);计分/连击/回合上限;**异步判定序号守卫**(在途取消/迟到响应静默丢弃——反抽自"让 AI 猜"场景)。`onCorrect` 直接接 `CelebrationController.fire`。
+⚠️ n=1 泛化:第二款回合制接入时校准,别当万能。实时类玩法**不要**硬套(用 Ticker 自己写循环,见 demo)。
+
+## demo_skins/tapbird(换皮验证)
+
+实时点按飞行类(刻意≠反抽来源的回合制)+ 纸剪贴风(刻意≠首款蜡笔风)——双重验证基座的玩法/风格无关性。全程基座件,`flutter analyze` 零告警。跑法:`cd demo_skins/tapbird && flutter run`。
