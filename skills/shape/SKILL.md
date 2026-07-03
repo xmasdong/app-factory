@@ -68,6 +68,8 @@ Synthesis  (单 agent = 唯一写 state 口) — 汇编完整 spec.md + 跑 app-
 ```
 - [ ] Step 0: 读 docs/lessons.md (历史教训)
 - [ ] Step 1: 全局认知 (产品定义 / 用户故事 / 不做清单 / 视觉方向)
+- [ ] Step 1.45: 能力反推 (模块从产品推;通用件逐个过堂,不需要显式删)
+- [ ] Step 1.48: 体验演出设计 EXPERIENCE-SCRIPT 过一遍 (联想透镜;不适用=节里写一句理由,games 门验节存在)
 - [ ] Step 1.5: PRD 挑战 (5 视角)
 - [ ] Step 1.6: 故障想象力 (维度枚举 + 对账)
 - [ ] Step 1.65: **产 DESIGN-FEED(投料单,UI/游戏类必产)**——见下方「DESIGN-FEED」节

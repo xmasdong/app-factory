@@ -140,6 +140,24 @@ sg_app_naming_real_evidence() {
   fi
 }
 
+sg_app_experience_script() {
+  # games 类:spec 必须有 ## EXPERIENCE-SCRIPT 节且有内容(演出节拍表,或"演出极简+一句理由")。
+  # 验的是"想过并留痕",不验内容多少——联想透镜非配额;非游戏项目直接过。
+  _app_is_game || return 0
+  local file="$ROOT/docs/spec.md"
+  [[ ! -f "$file" ]] && { echo "spec.md 不存在"; return; }
+  if ! grep -qE '^##+[[:space:]]*EXPERIENCE-SCRIPT' "$file"; then
+    echo "spec.md 缺 ## EXPERIENCE-SCRIPT 节(体验演出设计:节拍表,或写明'演出极简'+理由——想过并留痕,不是配额)"
+    return
+  fi
+  local body
+  body=$(awk '/^##+[[:space:]]*EXPERIENCE-SCRIPT/{f=1;next} /^##[^#]/{f=0} f' "$file" | grep -cve '^[[:space:]]*$') || body=0
+  if (( body < 1 )); then
+    echo "EXPERIENCE-SCRIPT 节是空的(节拍表没写,跳过理由也没写)"
+    return
+  fi
+}
+
 sg_app_economics_real() {
   # 价格阶梯 + 反薅 ≥5 + 不允许模糊数字 (约/可能/待估/TBD/TODO)
   local file="$ROOT/docs/spec.md"
@@ -1266,6 +1284,12 @@ cmd_app_gate() {
       fi
       sg_run "$(sg_app_platform_matrix)" "多端能力矩阵(声明端×相关能力 ≥1 行 + 无懒惰 fallback)"
       sg_run "$(sg_app_task_platform_field)" "TASK PLATFORM 字段全填"
+      # 老项目兼容(同台账模式):有 shape 台账=新流程项目→硬;无台账(memmatch 等存量)→软提示
+      if [[ -f "$ROOT/.claude/state/skill-run/shape.json" ]]; then
+        sg_run "$(sg_app_experience_script)" "体验演出设计留痕(games:EXPERIENCE-SCRIPT 节存在且非空;跳过理由也算)"
+      else
+        sg_run_soft "$(sg_app_experience_script)" "体验演出设计留痕(games)"
+      fi
       # design-first: 数据契约(补实)+ openapi(仅 design-first 项目),全 advisory
       sg_run_soft "$(sg_app_data_contract)" "数据契约表 + 消费端 ≥2 + 端侧独有字段"
       [[ -d "$ROOT/api" || -f "$ROOT/docs/design/design-manifest.json" ]] && \
