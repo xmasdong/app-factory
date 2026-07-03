@@ -121,6 +121,7 @@ app 主线最常见的灾难: bundle id / 域名 / App Store 名 / IAP product i
 - **MUST commit 自动授权** (继承 generic): app-gate.sh PASS + scope 在 FILES 内 → 直接 commit
 - **MUST 每个 gate-skill 开跑第一动作 = `scripts/skill-ledger.sh init <skill>`**,逐步 done/skip(理由),闸门验台账——凭记忆复刻流程=软工序蒸发(毕业考实锤),台账让漏工变机械红灯
 - **MUST 宣称"完成"前跑 `/self-correct`** (build 收尾 + qa 前): 拿 build-constraints 8 约束自省, 自纠能修的、诚实标出需真机/用户的——这是把"历史上反复被人纠正"变成"自己先纠"的那步
+- **MUST 用户反馈先落账再动手**:生产/打磨期收到用户细节反馈(对话里的"这里不对/加个X/效果不好"),动手前逐条记入 status.md `## 反馈台账`(编号/原话摘要/绑定事件的验收句/状态),完成打勾附回执。禁止只在对话里接反馈——聊天里的反馈会随 compaction/换会话蒸发(drawguess 7/3 实锤:一上午 6 条细节反馈 0 条落档)
 
 ## 结束标记 (合规)
 
