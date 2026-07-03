@@ -58,6 +58,16 @@ if [[ -f "$SIGNAL_FILE" ]]; then
   fi
 fi
 
+# ---- app 主线 skill 归 stop-app-audit.sh 管，generic skill-gate 不认识它们 ----
+# discover/lockdown/shape/build/qa/ship 由 app-gate.sh 验收（stop-app-audit.sh 已按 CURRENT_GATE 跑过）。
+# 通用 ai-rules.sh skill-gate 只认 spec/impl/check/verify/release，遇到 app skill 会误报 "Unknown skill"。
+case "$SKILL" in
+  discover|lockdown|shape|build|qa|ship)
+    log_hook "stop-skill-gate-app-skip" "skill=$SKILL 归 stop-app-audit.sh 管，generic 跳过"
+    exit 0
+    ;;
+esac
+
 # ---- 第 2 层：Report 文件新鲜度检测（check/verify/release）----
 if [[ -z "$SKILL" ]]; then
   STATE_DIR="$ROOT/.claude/state"

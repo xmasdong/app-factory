@@ -201,10 +201,19 @@ chmod +x "$PROJECT_ROOT/.claude/hooks/"*.sh
           {"type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-compact-dump.sh"}
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {"type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-prompt-resume-detect.sh"}
+        ]
+      }
     ]
   }
 }
 ```
+
+**⭐ UserPromptSubmit 必须注册**:`pre-prompt-resume-detect.sh` 检测用户"推进/go"→ 置 AUTONOMOUS=true。漏注册 = 用户回"推进"永远不触发,项目卡死 Discovery(tickpilot-flutter 实锤过)。
 
 **Stop hook 顺序:** `stop-app-audit` 在 `stop-skill-gate` 之前. app-audit 先跑, PROJECT_TYPE != app → exit 0 不阻塞链; app-audit 发现 A-GATE 验收失败 → exit 2 阻塞, skill-gate 不会再跑.
 
