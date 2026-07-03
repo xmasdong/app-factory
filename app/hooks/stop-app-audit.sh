@@ -77,6 +77,21 @@ if [[ "$PROJECT_TYPE" != "app" ]]; then
 fi
 
 # ============================================================================
+# 讨论轮豁免(修「聊天也被审」):本 hook 的语义 = 「AI 宣称 skill 完成时机械检查」。
+# 完成宣称的机械标志 = skill-signal.json 的 epoch 变化。信号没动 → 这轮是讨论/问答,
+# 不是生产收尾,放行。skill 补做后会重写信号(新 epoch)→ 下次 Stop 正常审。
+# ============================================================================
+SIG="$ROOT/.claude/state/skill-signal.json"
+LASTSIG_FILE="$ROOT/.claude/state/.stop-app-audit-lastsig"
+_sig_now=""
+[[ -f "$SIG" ]] && _sig_now=$(grep -o '"epoch":[0-9]*' "$SIG" 2>/dev/null | head -1)
+_sig_seen=$(cat "$LASTSIG_FILE" 2>/dev/null || true)
+if [[ -z "$_sig_now" || "$_sig_now" == "$_sig_seen" ]]; then
+  exit 0   # 无完成宣称 → 讨论轮,不审
+fi
+printf '%s' "$_sig_now" > "$LASTSIG_FILE" 2>/dev/null || true
+
+# ============================================================================
 # 防重复: 5 分钟内同样问题不重复触发
 # ============================================================================
 
