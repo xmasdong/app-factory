@@ -134,7 +134,10 @@ fi
 PRODUCT_FORM: <Tool/Content/Community/Commerce/Hybrid> — <理由: 引用 Step 1 调研数据>
 TARGET_MARKET: <地理> [FROZEN] — <理由: 引用 Step 1 商店地区 / 用户密度数据>
 TARGET_USER: <年龄+性别+场景> — <理由: 引用 Step 1 差评样本中的用户画像>
-REVENUE_MODEL: <Subscription/IAP/Ads/Commerce/Free/Hybrid> — <理由: 引用 Step 1 同品类 Top 10 变现模型>
+REVENUE_MODEL: <Subscription/IAP/Ads/Commerce/Free/Hybrid/Deferred> — <理由: 引用 Step 1 同品类 Top 10 变现模型>
+<!-- Deferred = 暂不变现(先验证留存/自用),合法档位非偷懒:选它则 build 不长 paywall/广告/IAP 骨架
+     (连显式 stub 都不长,要接时再加),economics 按"声明无变现"放行,ship 前可升级改档。
+     留存验证类游戏/自用工具默认考虑此档——模板铺满变现骨架≠产品需要变现。 -->
 TECH_STACK: <Flutter/RN/原生/Tauri/鸿蒙/待 spike 定> — <理由: 引用 Step 1 技术依赖度>
 ```
 

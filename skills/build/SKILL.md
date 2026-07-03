@@ -97,6 +97,14 @@ description: "Build one task to passing tests with PLATFORM isolation, bundle id
 - **静默降级** (返回假数据且不报错不记日志) **生产路径禁止**
 - `stub-scan` 脚本在 commit 前 + /build 验收时自动检测
 
+**stub 两类税则(处置不同,别一锅端):**
+- **①外部资产型**(AdMob unit id/ASC IAP product/商户号/API key——AI 造不出的):显式 Stub+WARNING+
+  记 status.md 前置人工动作清单。这是正确姿势(oneshot 先例)。但先问一句:REVENUE_MODEL 是 Deferred 吗?
+  是 → 连 stub 都不该长,整个模块不建。
+- **②能力型**(分析逻辑/情报源/编排/广告插入时机/事件接线——AI 本可接的):**禁止 stub**。
+  接不了就如实标"未做"进 open_items,不许造壳凑门。"价格×固定百分比"式假分析 = 本条头号禁品
+  (trade-copilot"外壳90分灵魂10分"的病根)。
+
 ### app 主线 mock 路由 (额外约束)
 
 **允许 mock 推进** (前端不阻塞):
