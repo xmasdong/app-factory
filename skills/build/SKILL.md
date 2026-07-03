@@ -229,6 +229,12 @@ pubspec 挂 `juice_kit`(path 依赖,见 bases/game-flutter/README),直接 import
 资产走 `asset_station/make_assets.sh`(key art 先行+identity_qc)+ `icon_cut.sh`。
 **手写这些件 = 重新发明,违反闭环三则。** 基座缺件才自写,并评估回流。
 
+**key art 审美签字点(guadagua 实锤补的)**:key art 是全套资产的风格母版,错一张全套错。
+- **用户在场(会话交互中)**:key art 出图后**停,给用户过目签字再派生**;被否 → 要参考图/风格纠偏词
+  → 更新 DESIGN-FEED 风格基因段 → 重出(旧图作废,清 skip_if_exists 缓存)。禁止拿着被否的母版继续派生。
+- **无人值守**:VLM style_consistent 自评放行,但交付包显式标「key art 未经人审」——审美最后一眼消不掉,
+  只能诚实标出,不能装作机器审过 = 人审过。
+
 ### ② 质感 pass(手感层,重点)
 
 | 件 | 最低标准 |
