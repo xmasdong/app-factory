@@ -1399,6 +1399,12 @@ sg_upstream_staleness_warn() {
   # 约定路径
   elif [[ "$(basename "$local_gate")" = "project-gate.sh" && -f "$HOME/ai-runner/skills-kit/scripts/project-gate.sh" ]]; then
     upstream="$HOME/ai-runner/skills-kit/scripts/project-gate.sh"
+  # ai-rules.sh 的真源=app-factory(AI_RULES_ROOT 或默认克隆位);老 ~/ai-rules(2026-05 遗留)
+  # 只当最后兜底——guadagua 实锤:scaffold 自 app-factory 的项目被拿去跟老仓比 sha 必误报。
+  elif [[ "$(basename "$local_gate")" = "ai-rules.sh" && -n "${AI_RULES_ROOT:-}" && -f "${AI_RULES_ROOT}/scripts/ai-rules.sh" ]]; then
+    upstream="${AI_RULES_ROOT}/scripts/ai-rules.sh"
+  elif [[ "$(basename "$local_gate")" = "ai-rules.sh" && -f "$HOME/opc/app-factory/scripts/ai-rules.sh" ]]; then
+    upstream="$HOME/opc/app-factory/scripts/ai-rules.sh"
   elif [[ "$(basename "$local_gate")" = "ai-rules.sh" && -f "$HOME/ai-rules/scripts/ai-rules.sh" ]]; then
     upstream="$HOME/ai-rules/scripts/ai-rules.sh"
   fi
