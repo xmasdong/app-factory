@@ -54,15 +54,15 @@
 > 默认 Supabase,但要按**能力需求**对比,不是无脑默认。备选含 **Cloudflare(AI 基建友好)**。
 > ⚠️ **候选先过 §0 环境闸**:矩阵只在 `env-probe.json.backend_options.available=true` 的候选里评分。默认 Supabase **仅当它 available**(装了 CLI 或授权了 Supabase MCP);否则从环境已就绪的里选(如本机只有 wrangler+docker → 默认候选是 Cloudflare / 自建),并把"启用 Supabase 需装 CLI/授权 MCP"作为可选升级项告诉用户。
 
-| 维度(1-5,5 最佳) | Supabase | Cloudflare | Firebase | PocketBase |
-|---|---|---|---|---|
-| 关系型 SSOT(schema 当真相源) | 5 | 3(D1=SQLite) | 1(NoSQL) | 4 |
-| **权限/越权可声明(抗 AI 幻觉)** | **5(RLS)** | 2(写 Worker 代码) | 3(rules) | 3 |
-| 实时同步 | 4 | 4(Durable Objects) | 5 | 3 |
-| **AI 基建友好**(跑模型/向量/LLM 网关/RAG/边缘) | 3(pgvector) | **5(Workers AI+Vectorize+AI Gateway)** | 3(Vertex) | 1 |
-| 成本上限可控(避失控账单) | 4 | **5(定价可预测)** | 2(账单易失控) | 5(自托管) |
-| 低锁定 / 可自托管 | 5 | 3 | 1 | 5 |
-| **agent 自助部署**(CLI) | 4(supabase) | **5(wrangler)** | 3 | 3 |
+| 维度(1-5,5 最佳) | Supabase | Cloudflare | Firebase | PocketBase | 自建服务器+Docker |
+|---|---|---|---|---|---|
+| 关系型 SSOT(schema 当真相源) | 5 | 3(D1=SQLite) | 1(NoSQL) | 4 | 5(自选 PG) |
+| **权限/越权可声明(抗 AI 幻觉)** | **5(RLS)** | 2(写 Worker 代码) | 3(rules) | 3 | 2(全在应用层=幻觉区) |
+| 实时同步 | 4 | 4(Durable Objects) | 5 | 3 | 3(自建 WS) |
+| **AI 基建友好**(跑模型/向量/LLM 网关/RAG/边缘) | 3(pgvector) | **5(Workers AI+Vectorize+AI Gateway)** | 3(Vertex) | 1 | 3(pgvector/自装,GPU 看机器) |
+| 成本上限可控(避失控账单) | 4 | **5(定价可预测)** | 2(账单易失控) | 5(自托管) | **5(固定月租)** |
+| 低锁定 / 可自托管 | 5 | 3 | 1 | 5 | **5(零锁定)** |
+| **agent 自助部署**(CLI) | 4(supabase) | **5(wrangler)** | 3 | 3 | 4(docker build+ssh compose up,密钥就绪即全自动) |
 
 ### 5. 后端决策逻辑
 
@@ -71,6 +71,10 @@
   - ⚠️ **代价**:D1 无 RLS,权限写在 Worker 代码 = **回到 AI 幻觉区** → backend-forge 对 CF 栈**强制 ownership 越权矩阵 + 负向测试加倍严**(数量 = 矩阵行数,且每条手写权限要过对抗验证)来补 RLS 的缺位。
 - **Firebase**:实时同步是核心(聊天/协作)且接受锁定 + 账单风险(必设预算告警)。
 - **PocketBase**:纯副业极简自托管。
+- **选自建服务器+Docker** 当:① 已有服务器(边际成本≈0)② 数据主权/自控要紧 ③ 国内合规域
+  (**小程序后端要备案域名,自建+国内服务器天然顺路**)④ 常驻进程型服务(盯盘/定时任务,serverless 计费不划算)。
+  - ⚠️ **代价**:权限全在应用层 = AI 幻觉区 → backend-forge 越权负向测试同 CF 待遇(矩阵行数×2);
+    运维自扛(TLS/备份/监控)→ 部署产物必须含健康检查+重启策略,见 backend-forge「自建 Docker 部署」节。
 
 **选定写进 `backend-readiness.md`**,backend-forge Step 0 读它。
 

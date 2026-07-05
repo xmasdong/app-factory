@@ -490,3 +490,17 @@ return { ssot, perEndpoint, ruleVerdicts, synth }
 或 advisory 提示:
 
 `建议: Synthesis critic 报 越权负向覆盖 4/5 矩阵行, post.delete 缺 A 删 B 的负向用例; 且 contract-test target=mock, 上线前需对 real 后端复跑 schemathesis, 再进 /qa`
+
+
+## 自建 Docker 部署(选型=自建服务器时,SHOULD 产;dev compose 之外的生产面)
+
+产物四件套(原则式,按项目裁):
+1. **Dockerfile(多阶段)**:builder 装依赖编译 → runtime 只带产物(瘦镜像);**HEALTHCHECK 指到真接口**(如 /health);
+   非 root 用户跑;secrets 一律 env 注入,**镜像里禁止烧 key/密码**(.dockerignore 挡 .env)
+2. **docker-compose.prod.yml**:api + PG/Redis(或接宿主机现有实例);`restart: unless-stopped`;
+   数据卷持久化;日志 max-size 轮转;端口只暴露给反代
+3. **deploy.sh**:build → tag(git sha,禁 latest 独苗)→ push registry(GHCR;国内服务器用 ACR/私有 registry 免墙)
+   → ssh 服务器 `docker compose pull && up -d` → 打健康检查,不过=自动回滚上一 tag。迁移策略显式选:启动时 migrate(单实例)或独立 job
+4. **HUMAN 前置清单**(记 status.md):服务器 ssh 可达+密钥 / 域名 DNS / TLS 反代(caddy 最省:自动证书两行配置)/ registry 凭证
+
+验收 = deploy.sh 真跑一遍:镜像起在真服务器上、健康检查绿、公网域名 https 可达——"能部署"以真部署为证,不以脚本存在为证。

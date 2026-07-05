@@ -263,3 +263,8 @@ AI 在用户提交后可帮:
 
 读 `.claude/rules/platform-weapp.md` §5/§7/§8:cli upload 传体验版;mp 后台提审=人工(类目/隐私保护指引/测试账号/审核备注)进 HUMAN 清单;
 备案/版号/商户号未就绪=不可逆点硬卡(合规后置到此为止)。审核周期 1-7 天,排期留 buffer。
+
+## 自建 Docker 后端上线(选型=自建时)
+
+ship 阶段后端上线 = 跑 backend-forge「自建 Docker 部署」的 deploy.sh 真部署+健康检查绿+域名 https 可达;
+服务器/DNS/TLS/registry 凭证未就绪 = HUMAN 硬前置(不可逆点,同提审待遇)。
