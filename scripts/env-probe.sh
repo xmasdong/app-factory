@@ -114,6 +114,9 @@ CAP_IOS=$( _present xcodebuild && _present swift && echo true || echo false )
 CAP_ANDROID=$( { _present adb || _present gradle; } && echo true || echo false )
 CAP_FLUTTER=$( _present flutter && _present dart && echo true || echo false )
 CAP_WEB=$( _present node && echo true || echo false )
+# 微信小程序/小游戏:开发者工具 CLI(需在工具设置里开启服务端口)
+WEAPP_CLI="/Applications/wechatwebdevtools.app/Contents/MacOS/cli"
+CAP_WEAPP=$( { [[ -x "$WEAPP_CLI" ]] && _present node; } && echo true || echo false )
 
 # ---- 后端可选项(available + why + how-to-enable)--------------------------
 BACKEND_JSON='[]'
@@ -169,6 +172,7 @@ if $HAVE_JQ; then
     --argjson mcp "$MCP_CONFIGURED" \
     --argjson cap_ios "$CAP_IOS" --argjson cap_and "$CAP_ANDROID" \
     --argjson cap_flutter "$CAP_FLUTTER" --argjson cap_web "$CAP_WEB" \
+    --argjson cap_weapp "$CAP_WEAPP" \
     --argjson backend "$BACKEND_JSON" \
     --argjson stack "$STACK_JSON" \
     '{
@@ -184,11 +188,12 @@ if $HAVE_JQ; then
         build_ios_native:$cap_ios,
         build_android_native:$cap_and,
         build_cross_platform_flutter:$cap_flutter,
-        build_web:$cap_web
+        build_web:$cap_web,
+        build_weapp:$cap_weapp
       },
       stack_by_publish_target:$stack,
       backend_options:$backend,
-      note:"环境预检快照;发布目标须问用户(全端→Flutter)。不可用后端标 how_to_enable。"
+      note:"环境预检快照;发布目标须问用户(全端→Flutter)。不可用后端标 how_to_enable。build_weapp=false 时:装微信开发者工具+设置里开启服务端口(CLI/HTTP);小程序细则见 app/rules/platform-weapp.md。"
     }' > "$OUT"
 else
   # 无 jq 兜底:present-only 文本

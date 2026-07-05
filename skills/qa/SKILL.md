@@ -424,3 +424,8 @@ for round in 1..3:
 或失败:
 
 `停住: Step 4 反绕过验证失败 (reviewer_notes_account 自动 VIP), 修代码后重 /qa`
+
+## weapp 分支(发布目标含微信小程序/小游戏时)
+
+读 `.claude/rules/platform-weapp.md` §5/§7:真跑回路= miniprogram-automator(launch→页面→screenshot,截图喂 VLM 实证门照用)
++ 体验评分 + cli preview 真机扫码;UGC 类联调 msgSecCheck/mediaCheckAsync;审核红线自扫(诱导分享/iOS 虚拟支付引导/隐私弹窗)。

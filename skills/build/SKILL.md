@@ -300,3 +300,8 @@ pubspec 挂 `juice_kit`(path 依赖,见 bases/game-flutter/README),直接 import
 或阻塞:
 
 `停住: T<N> 依赖 deferred 决策"账号体系", 跳到 T<N+2> 实现"导出报表" (无阻塞)`
+
+## weapp 分支(发布目标含微信小程序/小游戏时)
+
+读 `.claude/rules/platform-weapp.md` §1/§7:setData diff 纪律、rpx、分包体积预算随构建自检(主包⚓2MB=硬约束)、
+域名白名单开发态豁免上线态必配、页面栈≤10。小游戏走引擎(Cocos 优先),不套 WXML 工序。

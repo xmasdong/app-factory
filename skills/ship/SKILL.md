@@ -258,3 +258,8 @@ AI 在用户提交后可帮:
 或阻塞:
 
 `停住: Step 7 合规复扫发现 PrivacyInfo.xcprivacy 缺 NSUserDefaults 字段, 修后重 /ship`
+
+## weapp 分支(发布目标含微信小程序/小游戏时)
+
+读 `.claude/rules/platform-weapp.md` §5/§7/§8:cli upload 传体验版;mp 后台提审=人工(类目/隐私保护指引/测试账号/审核备注)进 HUMAN 清单;
+备案/版号/商户号未就绪=不可逆点硬卡(合规后置到此为止)。审核周期 1-7 天,排期留 buffer。

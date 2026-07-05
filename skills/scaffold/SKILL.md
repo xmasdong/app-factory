@@ -105,6 +105,8 @@ cp "$AI_RULES_ROOT/app/rules/core.md" "$PROJECT_ROOT/.claude/rules/core.md"
 cp "$AI_RULES_ROOT/app/rules/generic-core.md" "$PROJECT_ROOT/.claude/rules/generic-core.md"
 # ⭐ 通用约束(判断力地基, build-constraints + core.md/CLAUDE 都引用, /self-correct 读它)
 cp "$AI_RULES_ROOT/app/rules/build-constraints.md" "$PROJECT_ROOT/.claude/rules/build-constraints.md"
+# 平台知识包(发小程序/小游戏时 gate SKILL 引用;不发也拷,零成本)
+cp "$AI_RULES_ROOT/app/rules/platform-weapp.md" "$PROJECT_ROOT/.claude/rules/platform-weapp.md" 2>/dev/null || true
 
 # ⭐ app-gate.sh 机械验收脚本 —— 必拷:hooks 在 $ROOT/.claude/scripts/app-gate.sh 找它,不拷=闸门全跑不了
 cp "$AI_RULES_ROOT/scripts/app-gate.sh" "$PROJECT_ROOT/.claude/scripts/app-gate.sh"

@@ -40,6 +40,9 @@
 
 > AI-可建性参考:Flutter/Dart、React/TS、SwiftUI 在主流 LLM 训练数据中覆盖好,AI 写得顺;冷门 DSL/新框架 AI 易错。
 
+**微信小程序/小游戏为发布目标时**:先读 `.claude/rules/platform-weapp.md`(小程序≠小游戏/主体决策/
+版号红线/原生 vs Taro/uni-app vs 小游戏引擎)——env-probe `build_weapp` 为 false 先装开发者工具+开服务端口。
+
 ### 3. 决策
 
 - **选定:** `<栈>` — <一句话理由,引用矩阵最高分项 + 能力需求命中>
